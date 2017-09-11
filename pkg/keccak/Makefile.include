@@ -1,0 +1,21 @@
+INCLUDES += -I$(PKGDIRBASE)/keccak/
+
+INCLUDES += -I$(PKGDIRBASE)/keccak/Common
+INCLUDES += -I$(PKGDIRBASE)/keccak/Constructions
+INCLUDES += -I$(PKGDIRBASE)/keccak/Keyak
+INCLUDES += -I$(PKGDIRBASE)/keccak/Ketje
+INCLUDES += -I$(PKGDIRBASE)/keccak/Modes
+INCLUDES += -I$(PKGDIRBASE)/keccak/PlSnP
+INCLUDES += -I$(PKGDIRBASE)/keccak/PlSnP/KeccakP-200-times2/OptimizedAsmARM
+INCLUDES += -I$(PKGDIRBASE)/keccak/PlSnP/KeccakP-400-times2/OptimizedAsmARM
+INCLUDES += -I$(PKGDIRBASE)/keccak/PlSnP/KeccakP-800-times2/OptimizedAsmARM
+INCLUDES += -I$(PKGDIRBASE)/keccak/PlSnP/KeccakP-800-times4/OptimizedAsmARM
+INCLUDES += -I$(PKGDIRBASE)/keccak/PlSnP/KeccakP-800-times8/OptimizedAsmARM
+INCLUDES += -I$(PKGDIRBASE)/keccak/PlSnP/KeccakP-1600-times2/OptimizedAsmARM
+INCLUDES += -I$(PKGDIRBASE)/keccak/PlSnP/KeccakP-1600-times4/OptimizedAsmARM
+INCLUDES += -I$(PKGDIRBASE)/keccak/PlSnP/KeccakP-1600-times8/OptimizedAsmARM
+INCLUDES += -I$(PKGDIRBASE)/keccak/SnP
+INCLUDES += -I$(PKGDIRBASE)/keccak/SnP/KeccakP-200/OptimizedAsmARM
+INCLUDES += -I$(PKGDIRBASE)/keccak/SnP/KeccakP-400/OptimizedAsmARM
+INCLUDES += -I$(PKGDIRBASE)/keccak/SnP/KeccakP-800/OptimizedAsmARM
+INCLUDES += -I$(PKGDIRBASE)/keccak/SnP/KeccakP-1600/OptimizedAsmARM
