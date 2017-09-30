@@ -55,15 +55,16 @@ void sha256_hash(sha256_context_t* ctx, char* data, size_t databitlen, char* has
 
 /*
  * Function to generate a string with the result of a division without using floating point arithmetic.
- * The string is cut off after a certain precision. If applicable and configured, the last digit is rounded up.
+ * The string is cut off at a given precision after the decimal point. If applicable and configured, the last digit is rounded up.
  * 
- * @param[out]  buf         Pointer to the buffer for the string to be generated.
- * @param[in]   buf_size    The size of the buffer.
- * @param[in]   dividend    The dividend.
- * @param[in]   divisor     The divisor.
- * @param[in]   precision   The maximum number of digits after the decimal point.
- * @param[in]   round       0 if the last digit is to be rounded up if applicable,
- *                          1 otherwise.
+ * @param[out]  buf             Pointer to the buffer for the string to be generated.
+ * @param[in]   buf_size        The size of the buffer.
+ * @param[in]   dividend        The dividend.
+ * @param[in]   divisor         The divisor.
+ * @param[in]   precision       The maximum number of digits after the decimal point.
+ * @param[in]   pre_precision   The maximum numer of digits before the decimal point.
+ * @param[in]   round           0 if the last digit is to be rounded up if applicable,
+ *                              1 otherwise.
  */
 void get_floatstring(char* buf, size_t buf_size, long dividend, long divisor, uint8_t precision, uint8_t pre_precision, uint8_t round) {
 
