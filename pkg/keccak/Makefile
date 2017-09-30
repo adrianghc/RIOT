@@ -10,7 +10,7 @@ ifeq ($(CPU),native)
 	$(MAKE) KeccakHash800Native.a -C $(PKG_BUILDDIR)
 	@cp $(PKG_BUILDDIR)/bin/KeccakHash800Native.a $(PKG_BUILDDIR)/../../../$(BOARD)/keccak.a
 else
-ifeq ($(CPU_ARCH),cortex-m0)
+ifeq ($(CPU_ARCH),$(filter $(CPU_ARCH), cortex-m0 cortex-m0plus))
 	@cp $(PKG_BUILDDIR)/Build/CompilerFlagsARMv6M.build $(PKG_BUILDDIR)/CompilerFlags.build
 	$(MAKE) KeccakHash800ARMv6M.a -C $(PKG_BUILDDIR)
 	@cp $(PKG_BUILDDIR)/bin/KeccakHash800ARMv6M.a $(PKG_BUILDDIR)/../../../$(BOARD)/keccak.a
