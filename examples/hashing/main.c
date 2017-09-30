@@ -63,6 +63,7 @@ void sha256_hash(sha256_context_t* ctx, char* data, size_t databitlen, char* has
  * @param[in]   divisor         The divisor.
  * @param[in]   precision       The maximum number of digits after the decimal point.
  * @param[in]   pre_precision   The maximum numer of digits before the decimal point.
+ *                              Exception: When a number only containing the digit 9 is rounded up.
  * @param[in]   round           0 if the last digit is to be rounded up if applicable,
  *                              1 otherwise.
  */
