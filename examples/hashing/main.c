@@ -203,7 +203,7 @@ void *prog_thread(void *arg)
         } else if (msg.content.value == 2) {
             return NULL;
         } else {
-            printf("Progress: %u\r", *i);
+            printf("Progress: %"PRIu32"\r", *i);
         }
     }
 }
