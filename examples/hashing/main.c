@@ -67,14 +67,14 @@ void sha256_hash(sha256_context_t* ctx, char* data, size_t databitlen, char* has
  * @param[in]   round           0 if the last digit is to be rounded up if applicable,
  *                              1 otherwise.
  */
-void get_floatstring(char* buf, size_t buf_size, long dividend, long divisor, uint8_t precision, uint8_t pre_precision, uint8_t round) {
+void get_floatstring(char* buf, size_t buf_size, int64_t dividend, int64_t divisor, uint8_t precision, uint8_t pre_precision, uint8_t round) {
 
     /* Initialize */
     uint8_t i = 0;
     uint8_t inc_i = 0;
     uint8_t buf_init = 0;
     size_t len = 0;
-    long quot;
+    int64_t quot;
     char quot_chars[pre_precision+1];
 
     /* Generate the string */
@@ -95,7 +95,7 @@ void get_floatstring(char* buf, size_t buf_size, long dividend, long divisor, ui
             break;
         }
         quot = dividend / divisor;
-        snprintf(quot_chars, pre_precision+1, "%ld", quot);
+        snprintf(quot_chars, pre_precision+1, "%lld", quot);
         if (i == 0 && !inc_i) {
             strcpy(buf, quot_chars);
             buf_init = 1;
@@ -152,7 +152,7 @@ int main(void) {
 
     xtimer_ticks64_t start_ticks;
     xtimer_ticks64_t end_ticks;
-    long ticks_dif;
+    int64_t ticks_dif;
     char ticks_buf[32];
 
     /* Iterate through all desired string lengths */
@@ -178,9 +178,9 @@ int main(void) {
             sha256_hash(&ctx, datastring, databytelen, sha256Hashval);
         }
         end_ticks = xtimer_now64();
-        ticks_dif = (long) (end_ticks.ticks64 - start_ticks.ticks64);
+        ticks_dif = (int64_t) (end_ticks.ticks64 - start_ticks.ticks64);
         get_floatstring(ticks_buf, 32, num_iterations, ticks_dif, 4, 5, 1);
-        printf("Performance of SHA256: %d hash operations in %ld ticks (%s hash operations per tick).\n\n", num_iterations, ticks_dif, ticks_buf);
+        printf("Performance of SHA256: %d hash operations in %lld ticks (%s hash operations per tick).\n\n", num_iterations, ticks_dif, ticks_buf);
         
         /* Measure performance of Keccak */
         printf("Measure performance of Keccak.\n");
@@ -207,9 +207,9 @@ int main(void) {
                 keccak_hash(&keccakHashInstance, data, 8*databytelen, keccakHashval, keccak_rates[j], 800-keccak_rates[j]);
             }
             end_ticks = xtimer_now64();
-            ticks_dif = (long) (end_ticks.ticks64 - start_ticks.ticks64);
+            ticks_dif = (int64_t) (end_ticks.ticks64 - start_ticks.ticks64);
             get_floatstring(ticks_buf, 32, num_iterations, ticks_dif, 4, 5, 1);
-            printf("Performance of Keccak for r=%d and c=%d: %d hash operations in %ld ticks (%s hash operations per tick).\n", 
+            printf("Performance of Keccak for r=%d and c=%d: %d hash operations in %lld ticks (%s hash operations per tick).\n", 
                 keccak_rates[j], 800-keccak_rates[j], num_iterations, ticks_dif, ticks_buf);
         }
 
