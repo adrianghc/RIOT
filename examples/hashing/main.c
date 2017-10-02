@@ -179,7 +179,7 @@ int main(void) {
         }
         end_ticks = xtimer_now64();
         ticks_dif = (int64_t) (end_ticks.ticks64 - start_ticks.ticks64);
-        get_floatstring(ticks_buf, 32, num_iterations, ticks_dif, 4, 5, 1);
+        get_floatstring(ticks_buf, 32, num_iterations, ticks_dif, 8, 5, 1);
         printf("Performance of SHA256: %d hash operations in %lld ticks (%s hash operations per tick).\n\n", num_iterations, ticks_dif, ticks_buf);
         
         /* Measure performance of Keccak */
@@ -208,7 +208,7 @@ int main(void) {
             }
             end_ticks = xtimer_now64();
             ticks_dif = (int64_t) (end_ticks.ticks64 - start_ticks.ticks64);
-            get_floatstring(ticks_buf, 32, num_iterations, ticks_dif, 4, 5, 1);
+            get_floatstring(ticks_buf, 32, num_iterations, ticks_dif, 8, 5, 1);
             printf("Performance of Keccak for r=%d and c=%d: %d hash operations in %lld ticks (%s hash operations per tick).\n", 
                 keccak_rates[j], 800-keccak_rates[j], num_iterations, ticks_dif, ticks_buf);
         }
