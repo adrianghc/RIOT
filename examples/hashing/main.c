@@ -73,17 +73,44 @@ void get_floatstring(char* buf, size_t buf_size, int64_t dividend, int64_t divis
     uint8_t i = 0;
     uint8_t inc_i = 0;
     uint8_t buf_init = 0;
+    uint8_t is_negative = 0;
     size_t len = 0;
     int64_t quot;
     char quot_chars[pre_precision+1];
+
+    /* Handle divisor 0 */
+    if (divisor == 0) {
+        return;
+    }
+
+    /* Handle dividend 0 */
+    if (dividend == 0) {
+        strcpy(buf, "0");
+        return;
+    }
+
+    /* Handle negative input */
+    if ((dividend < 0 && divisor > 0) || (divisor < 0 && dividend > 0)) {
+        is_negative = 1;
+        dividend = abs(dividend);
+        divisor = abs(divisor);
+        strcpy(buf, "-");
+        buf_init = 1;
+        len += 1;
+    }
 
     /* Generate the string */
     while (i<precision+1 && len<buf_size-1) {
         if (dividend < divisor) {
             if (!inc_i) {
                 inc_i = 1;
-                if (!buf_init) {
+                if (!is_negative && !buf_init) {
                     strcpy(buf, "0");
+                    buf_init = 1;
+                    len += 1;
+                }
+                else if (is_negative && buf[len-1] == '-') {
+                    strncat(buf, "0", 1);
                     len += 1;
                 }
                 strncat(buf, ".", 1);
@@ -91,12 +118,15 @@ void get_floatstring(char* buf, size_t buf_size, int64_t dividend, int64_t divis
             }
             dividend *= 10;
         }
-        if (i == precision) {
+        if (i == precision || len == buf_size-1) {
+            if (buf[len-1] == '.') {
+                buf[len-1] = '\0';
+            }
             break;
         }
         quot = dividend / divisor;
         snprintf(quot_chars, pre_precision+1, "%lld", quot);
-        if (i == 0 && !inc_i) {
+        if (i == 0 && !inc_i && !buf_init) {
             strcpy(buf, quot_chars);
             buf_init = 1;
         } else {
@@ -122,7 +152,7 @@ void get_floatstring(char* buf, size_t buf_size, int64_t dividend, int64_t divis
     quot = dividend / divisor;
     if (quot >= 5) {
         for (int j=len-1; j>=0; j--) {
-            if (buf[j] == '.') {
+            if (buf[j] == '.' || buf[j] == '-') {
                 continue;
             }
             if (buf[j] >= '9') {
@@ -133,11 +163,15 @@ void get_floatstring(char* buf, size_t buf_size, int64_t dividend, int64_t divis
             }
         }
         /* Special case if a number that was rounded up only contained the digit 9 */
-        if (buf[0] == '0' && buf[1] == '0') {
+        if ((!is_negative && buf[0] == '0' && buf[1] == '0') || (is_negative && buf[1] == '0' && buf[2] == '0')) {
             for (size_t k=len-1; k>0; k--) {
                 buf[k] = buf[k-1];
             }
-            buf[0] = '1';
+            if (!is_negative) {
+                buf[0] = '1';
+            } else {
+                buf[1] = '1';
+            }
             buf[len] = '\0';
             if (buf[len-1] == '.') {
                 buf[len-1] = '\0';
