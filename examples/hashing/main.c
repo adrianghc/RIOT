@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <thread.h>
 #include <inttypes.h>
 #include <string.h>
 #include <math.h>
@@ -34,11 +35,18 @@
 #define KeccakP400_excluded
 #define KeccakP1600_excluded
 
+/* Stack size for the progress printing thread */
+char prog_thread_stack[THREAD_STACKSIZE_MAIN];
+
+/* Number of iterations */
 const int num_iterations = 1e6;
 
+/* Digest length in bits */
 const uint16_t hashbitlen = 256;
+/* Delimited suffix for Keccak input padding */
 const unsigned char keccak_delimitedSuffix = '\1';
 
+/* Array with the lengths of the messages to be hashed */
 const BitLength databytelens[] = { 64, 100, 1024, 10240, 102400 };
 
 void keccak_hash(Keccak_HashInstance* hashInstance, BitSequence* data, BitLength databitlen, BitSequence* hashval, int rate, int capacity) {
@@ -180,14 +188,42 @@ void get_floatstring(char* buf, size_t buf_size, int64_t dividend, int64_t divis
     }
 }
 
+/* This thread prints the current benchmarking progress (i.e. the number of iterations finished) */
+void *prog_thread(void *arg)
+{
+    uint32_t *i = arg;
+    msg_t msg;
+
+    while (1) {
+        xtimer_sleep(1);
+        msg_try_receive(&msg);
+        if (msg.content.value == 1) {
+            msg.content.value = 0;
+            thread_sleep();
+        } else if (msg.content.value == 2) {
+            return NULL;
+        } else {
+            printf("Progress: %u\r", *i);
+        }
+    }
+}
+
 int main(void) {
 
-    printf("Measure performance of SHA256 and Keccak in ticks needed to calculate %d hash operations and in hash operations per tick.\n\n\n", num_iterations);
+    printf("Measure performance of SHA256 and Keccak in ticks needed to calculate %d hash operations and in hash operations per tick.\n\n", num_iterations);
 
+    /* Initialize */
+    int32_t it_counter = 0;
     xtimer_ticks64_t start_ticks;
     xtimer_ticks64_t end_ticks;
     int64_t ticks_dif;
     char ticks_buf[32];
+
+    /* This thread prints the current benchmarking progress (i.e. the number of iterations finished) */
+    kernel_pid_t prog_thread_pid = thread_create(prog_thread_stack, sizeof(prog_thread_stack),
+                                    THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_SLEEPING,
+                                    prog_thread, &it_counter, "prog_thread");
+    msg_t msg;
 
     /* Iterate through all desired string lengths */
     for (uint32_t k=0; k<sizeof(databytelens)/sizeof(databytelens[0]); k++) {
@@ -195,7 +231,7 @@ int main(void) {
         size_t databytelen = databytelens[k];
 
         /* Generate random string */
-        printf("Generating random string of length %d.\n\n", databytelen);
+        printf("\nGenerating random string of length %d.\n\n", databytelen);
         random_init(0x33799f);
         char* datastring = malloc(databytelen);
         for (uint32_t l=0; l<databytelen; l++) {
@@ -207,14 +243,18 @@ int main(void) {
         printf("Measure performance of SHA256.\n");
         sha256_context_t ctx;
         char sha256Hashval[hashbitlen/8];
+        it_counter = 0;
+        thread_wakeup(prog_thread_pid);
         start_ticks = xtimer_now64();
-        for (int32_t i=0; i<num_iterations; i++) {
+        for (; it_counter<num_iterations; it_counter++) {
             sha256_hash(&ctx, datastring, databytelen, sha256Hashval);
         }
         end_ticks = xtimer_now64();
+        msg.content.value = 1; // Ask progress printing thread to sleep
+        msg_try_send(&msg, prog_thread_pid);
         ticks_dif = (int64_t) (end_ticks.ticks64 - start_ticks.ticks64);
         get_floatstring(ticks_buf, 32, num_iterations, ticks_dif, 8, 5, 1);
-        printf("Performance of SHA256: %d hash operations in %lld ticks (%s hash operations per tick).\n\n", num_iterations, ticks_dif, ticks_buf);
+        printf("\nPerformance of SHA256: %d hash operations in %lld ticks (%s hash operations per tick).\n\n", num_iterations, ticks_dif, ticks_buf);
         
         /* Measure performance of Keccak */
         printf("Measure performance of Keccak.\n");
@@ -236,21 +276,28 @@ int main(void) {
             } else if (j==1) {
                 printf("Benchmark normalized around the state size:\n");
             }
+            it_counter = 0;
+            thread_wakeup(prog_thread_pid);
             start_ticks = xtimer_now64();
-            for (int32_t i=0; i<num_iterations; i++) {
+            for (; it_counter<num_iterations; it_counter++) {
                 keccak_hash(&keccakHashInstance, data, 8*databytelen, keccakHashval, keccak_rates[j], 800-keccak_rates[j]);
             }
             end_ticks = xtimer_now64();
+            msg.content.value = 1; // Ask progress printing thread to sleep
+            msg_try_send(&msg, prog_thread_pid);
             ticks_dif = (int64_t) (end_ticks.ticks64 - start_ticks.ticks64);
             get_floatstring(ticks_buf, 32, num_iterations, ticks_dif, 8, 5, 1);
-            printf("Performance of Keccak for r=%d and c=%d: %d hash operations in %lld ticks (%s hash operations per tick).\n", 
+            printf("\nPerformance of Keccak for r=%d and c=%d: %d hash operations in %lld ticks (%s hash operations per tick).\n", 
                 keccak_rates[j], 800-keccak_rates[j], num_iterations, ticks_dif, ticks_buf);
         }
 
-        printf("\n");
         free(datastring);
 
     }
+
+    printf("\nAll benchmarks finished!\n\n");
+    msg.content.value = 2; // Ask progress printing thread to terminate
+    msg_send(&msg, prog_thread_pid);
 
     return 0;
     
