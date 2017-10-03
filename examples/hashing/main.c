@@ -133,7 +133,7 @@ void get_floatstring(char* buf, size_t buf_size, int64_t dividend, int64_t divis
             break;
         }
         quot = dividend / divisor;
-        snprintf(quot_chars, pre_precision+1, "%lld", quot);
+        snprintf(quot_chars, pre_precision+1, "%d", (int) quot);
         if (i == 0 && !inc_i && !buf_init) {
             strcpy(buf, quot_chars);
             buf_init = 1;
@@ -234,6 +234,10 @@ int main(void) {
         printf("\nGenerating random string of length %d.\n\n", databytelen);
         random_init(0x33799f);
         char* datastring = malloc(databytelen);
+        if (datastring == NULL) {
+            printf("\nNot enough memory for further benchmarks.\n\n");
+            return 0;
+        }
         for (uint32_t l=0; l<databytelen; l++) {
             datastring[l] = random_uint32_range(0x00, 0xff);
         }
@@ -254,7 +258,7 @@ int main(void) {
         msg_try_send(&msg, prog_thread_pid);
         ticks_dif = (int64_t) (end_ticks.ticks64 - start_ticks.ticks64);
         get_floatstring(ticks_buf, 32, num_iterations, ticks_dif, 8, 5, 1);
-        printf("\nPerformance of SHA256: %d hash operations in %lld ticks (%s hash operations per tick).\n\n", num_iterations, ticks_dif, ticks_buf);
+        printf("\nPerformance of SHA256: %d hash operations in %d ticks (%s hash operations per tick).\n\n", num_iterations, (int) ticks_dif, ticks_buf);
         
         /* Measure performance of Keccak */
         printf("Measure performance of Keccak.\n");
@@ -287,8 +291,8 @@ int main(void) {
             msg_try_send(&msg, prog_thread_pid);
             ticks_dif = (int64_t) (end_ticks.ticks64 - start_ticks.ticks64);
             get_floatstring(ticks_buf, 32, num_iterations, ticks_dif, 8, 5, 1);
-            printf("\nPerformance of Keccak for r=%d and c=%d: %d hash operations in %lld ticks (%s hash operations per tick).\n", 
-                keccak_rates[j], 800-keccak_rates[j], num_iterations, ticks_dif, ticks_buf);
+            printf("\nPerformance of Keccak for r=%d and c=%d: %d hash operations in %d ticks (%s hash operations per tick).\n", 
+                keccak_rates[j], 800-keccak_rates[j], num_iterations, (int) ticks_dif, ticks_buf);
         }
 
         free(datastring);
