@@ -282,20 +282,25 @@ int main(void) {
         printf("Measure performance of Keccak.\n");
         Keccak_HashInstance keccakHashInstance;
         BitSequence keccakHashval[hashbitlen/8];
-        int keccak_rates[2];
+        int keccak_rates[3];
+
+        /* Rate for benchmark with c=256 for an equivalent security level to SHA-256 of 128 bits */
+        keccak_rates[0] = 800-256;
         
         /* Calculate rate for benchmark normalized around the number of full state transformations (regardless of state size) */
-        keccak_rates[0] = 8 * (hashbitlen/8 + (hashbitlen*hashbitlen/64)/databytelen);
-        keccak_rates[0] += (8 - keccak_rates[0] % 8) % 8;
+        keccak_rates[1] = 8 * (hashbitlen/8 + (hashbitlen*hashbitlen/64)/databytelen);
+        keccak_rates[1] += (8 - keccak_rates[0] % 8) % 8;
 
         /* Calculate rate for benchmark normalized around the state size */
-        keccak_rates[1] = 100 + 100 * (hashbitlen/8) / databytelen;
-        keccak_rates[1] += (8 - keccak_rates[1] % 8) % 8;
+        keccak_rates[2] = 100 + 100 * (hashbitlen/8) / databytelen;
+        keccak_rates[2] += (8 - keccak_rates[2] % 8) % 8;
 
-        for (uint32_t j=0; j<2; j++) {
+        for (uint32_t j=0; j<3; j++) {
             if (j==0) {
-                printf("Benchmark normalized around the number of full state transformations (regardless of state size):\n");
+                printf("Benchmark with c=256 for an equivalent security level to SHA-256 of 128 bits:\n");
             } else if (j==1) {
+                printf("Benchmark normalized around the number of full state transformations (regardless of state size):\n");
+            } else if (j==2) {
                 printf("Benchmark normalized around the state size:\n");
             }
             it_counter = 0;
