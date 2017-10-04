@@ -210,8 +210,10 @@ void *prog_thread(void *arg)
         msg_try_receive(&msg);
         if (msg.content.value == 1) {
             msg.content.value = 0;
+            printf("\n");
             thread_sleep();
         } else if (msg.content.value == 2) {
+            printf("\n");
             return NULL;
         } else {
             printf("Progress: %"PRIu32"\r", *i);
@@ -223,7 +225,7 @@ void *prog_thread(void *arg)
 
 int main(void) {
 
-    printf("Measure performance of SHA256 and Keccak in ticks needed to calculate %d hash operations and in hash operations per tick.\n\n", num_iterations);
+    printf("\n\nMeasure performance of SHA256 and Keccak in ticks needed to calculate %d hash operations and in hash operations per tick.\n\n", num_iterations);
 
     /* Initialize */
     int32_t it_counter = 0;
@@ -276,7 +278,7 @@ int main(void) {
         }
         ticks_dif = (int64_t) (end_ticks.ticks64 - start_ticks.ticks64);
         get_floatstring(ticks_buf, 32, num_iterations, ticks_dif, 8, 5, 1);
-        printf("\nPerformance of SHA256: %d hash operations in %d ticks (%s hash operations per tick).\n\n", num_iterations, (int) ticks_dif, ticks_buf);
+        printf("Performance of SHA256: %d hash operations in %d ticks (%s hash operations per tick).\n\n", num_iterations, (int) ticks_dif, ticks_buf);
         
         /* Measure performance of Keccak */
         printf("Measure performance of Keccak.\n");
@@ -318,7 +320,7 @@ int main(void) {
             }
             ticks_dif = (int64_t) (end_ticks.ticks64 - start_ticks.ticks64);
             get_floatstring(ticks_buf, 32, num_iterations, ticks_dif, 8, 5, 1);
-            printf("\nPerformance of Keccak for r=%d and c=%d: %d hash operations in %d ticks (%s hash operations per tick).\n", 
+            printf("Performance of Keccak for r=%d and c=%d: %d hash operations in %d ticks (%s hash operations per tick).\n", 
                 keccak_rates[j], 800-keccak_rates[j], num_iterations, (int) ticks_dif, ticks_buf);
         }
 
@@ -326,7 +328,7 @@ int main(void) {
 
     }
 
-    printf("\nAll benchmarks finished!\n\n");
+    printf("\n\nAll benchmarks finished!\n\n");
     if (SHOW_PROGRESS) {
         msg.content.value = 2; // Ask progress printing thread to terminate
         msg_send(&msg, prog_thread_pid);
