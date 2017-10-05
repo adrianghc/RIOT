@@ -231,7 +231,7 @@ int main(void) {
     int32_t it_counter = 0;
     xtimer_ticks64_t start_ticks;
     xtimer_ticks64_t end_ticks;
-    int64_t ticks_dif;
+    uint64_t ticks_dif;
     char ticks_buf[32];
 
     /* This thread prints the current benchmarking progress (i.e. the number of iterations finished) */
@@ -276,9 +276,9 @@ int main(void) {
             msg.content.value = 1; // Ask progress printing thread to sleep
             msg_try_send(&msg, prog_thread_pid);
         }
-        ticks_dif = (int64_t) (end_ticks.ticks64 - start_ticks.ticks64);
+        ticks_dif = (uint64_t) (end_ticks.ticks64 - start_ticks.ticks64);
         get_floatstring(ticks_buf, 32, num_iterations, ticks_dif, 8, 5, 1);
-        printf("Performance of SHA256: %d hash operations in %d ticks (%s hash operations per tick).\n\n", num_iterations, (int) ticks_dif, ticks_buf);
+        printf("Performance of SHA256: %d hash operations in %u ticks (%s hash operations per tick).\n\n", num_iterations, (unsigned int) ticks_dif, ticks_buf);
         
         /* Measure performance of Keccak */
         printf("Measure performance of Keccak.\n");
@@ -323,10 +323,10 @@ int main(void) {
                 msg.content.value = 1; // Ask progress printing thread to sleep
                 msg_try_send(&msg, prog_thread_pid);
             }
-            ticks_dif = (int64_t) (end_ticks.ticks64 - start_ticks.ticks64);
+            ticks_dif = (uint64_t) (end_ticks.ticks64 - start_ticks.ticks64);
             get_floatstring(ticks_buf, 32, num_iterations, ticks_dif, 8, 5, 1);
-            printf("Performance of Keccak for r=%d and c=%d: %d hash operations in %d ticks (%s hash operations per tick).\n", 
-                keccak_rates[j], 800-keccak_rates[j], num_iterations, (int) ticks_dif, ticks_buf);
+            printf("Performance of Keccak for r=%d and c=%d: %d hash operations in %u ticks (%s hash operations per tick).\n", 
+                keccak_rates[j], 800-keccak_rates[j], num_iterations, (unsigned int) ticks_dif, ticks_buf);
         }
 
         free(datastring);
