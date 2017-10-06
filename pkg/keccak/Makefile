@@ -25,7 +25,7 @@ ifeq ($(CPU_ARCH),cortex-m3)
 	$(MAKE) KeccakHash800ARMv7M.a -C $(PKG_BUILDDIR)
 	@cp $(PKG_BUILDDIR)/bin/KeccakHash800ARMv7M.a $(PKG_BUILDDIR)/../../../$(BOARD)/keccak.a
 else
-ifeq ($(CPU_ARCH),cortex-m4)
+ifeq ($(CPU_ARCH),$(filter $(CPU_ARCH), cortex-m4 cortex-m4f))
 	@cp $(PKG_BUILDDIR)/Build/CompilerFlagsCortexM4.build $(PKG_BUILDDIR)/CompilerFlags.build
 	$(MAKE) KeccakHash800ARMv7M.a -C $(PKG_BUILDDIR)
 	@cp $(PKG_BUILDDIR)/bin/KeccakHash800ARMv7M.a $(PKG_BUILDDIR)/../../../$(BOARD)/keccak.a
