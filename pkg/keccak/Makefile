@@ -1,6 +1,6 @@
 PKG_NAME	:= keccak
 PKG_URL		:= https://github.com/adrianghc/KeccakCodePackage
-PKG_VERSION	:= 0bafec7ea15e896cf14c78403cb7d68640347cff
+PKG_VERSION	:= efc8e5d0d4e1edaa2595dd2f6f160c13
 
 .PHONY: all
 
