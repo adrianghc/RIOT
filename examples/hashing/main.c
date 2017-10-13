@@ -47,7 +47,7 @@
 char prog_thread_stack[THREAD_STACKSIZE_MAIN];
 
 /* Number of iterations */
-const int num_iterations = 1e6;
+const int num_iterations = 1e5;
 
 /* Digest length in bits */
 const uint16_t hashbitlen = 256;
