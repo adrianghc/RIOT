@@ -57,21 +57,29 @@ const unsigned char keccak_delimitedSuffix = '\1';
 /* Array with the lengths of the messages to be hashed */
 const BitLength databytelens[] = { 64, 100, 1024, 10240, 102400 };
 
-void keccak_hash(Keccak_HashInstance* hashInstance, BitSequence* data, BitLength databitlen, BitSequence* hashval, int rate, int capacity) {
-    Keccak_HashInitialize(hashInstance, rate, capacity, hashbitlen, keccak_delimitedSuffix);
+void keccak_hash(Keccak_HashInstance* hashInstance, BitSequence* data,
+                    BitLength databitlen, BitSequence* hashval,
+                    int rate, int capacity) {
+
+    Keccak_HashInitialize(hashInstance, rate, capacity,
+                            hashbitlen, keccak_delimitedSuffix);
     Keccak_HashUpdate(hashInstance, data, databitlen);
     Keccak_HashFinal(hashInstance, hashval);
 }
 
-void sha256_hash(sha256_context_t* ctx, char* data, size_t databitlen, char* hashval) {
+void sha256_hash(sha256_context_t* ctx, char* data,
+                    size_t databitlen, char* hashval) {
+
     sha256_init(ctx);
     sha256_update(ctx, data, databitlen);
     sha256_final(ctx, hashval);
 }
 
 /*
- * Function to generate a string with the result of a division without using floating point arithmetic.
- * The string is cut off at a given precision after the decimal point. If applicable and configured, the last digit is rounded up.
+ * Function to generate a string with the result of a division
+ * without using floating point arithmetic.
+ * The string is cut off at a given precision after the decimal point.
+ * If applicable and configured, the last digit is rounded up.
  * 
  * @param[out]  buf             Pointer to the buffer for the string to be generated.
  * @param[in]   buf_size        The size of the buffer.
@@ -83,7 +91,8 @@ void sha256_hash(sha256_context_t* ctx, char* data, size_t databitlen, char* has
  * @param[in]   round           0 if the last digit is to be rounded up if applicable,
  *                              1 otherwise.
  */
-void get_floatstring(char* buf, size_t buf_size, int64_t dividend, int64_t divisor, uint8_t precision, uint8_t pre_precision, uint8_t round) {
+void get_floatstring(char* buf, size_t buf_size, int64_t dividend, int64_t divisor,
+                        uint8_t precision, uint8_t pre_precision, uint8_t round) {
 
     /* Initialize */
     uint8_t i = 0;
@@ -179,27 +188,31 @@ void get_floatstring(char* buf, size_t buf_size, int64_t dividend, int64_t divis
             }
         }
         /* Special case if a number that was rounded up only contained the digit 9 */
-        if ((!is_negative && buf[0] == '0' && buf[1] == '0') || (is_negative && buf[1] == '0' && buf[2] == '0')) {
-            for (size_t k=len-1; k>0; k--) {
-                buf[k] = buf[k-1];
-            }
-            if (!is_negative) {
-                buf[0] = '1';
-            } else {
-                buf[1] = '1';
-            }
-            buf[len] = '\0';
-            if (buf[len-1] == '.') {
-                buf[len-1] = '\0';
-            }
+        if ((!is_negative && buf[0] == '0' && buf[1] == '0')
+            || (is_negative && buf[1] == '0' && buf[2] == '0')) {
+                for (size_t k=len-1; k>0; k--) {
+                    buf[k] = buf[k-1];
+                }
+                if (!is_negative) {
+                    buf[0] = '1';
+                } else {
+                    buf[1] = '1';
+                }
+                buf[len] = '\0';
+                if (buf[len-1] == '.') {
+                    buf[len-1] = '\0';
+                }
         }
     }
 }
 
 #ifdef SHOW_PROGRESS
 
-/* This thread prints the current benchmarking progress (i.e. the number of iterations finished) */
-/* Native board only */
+/*
+    This thread prints the current benchmarking progress
+    (i.e. the number of iterations finished)
+    Native board only
+*/
 void *prog_thread(void *arg)
 {
     uint32_t *i = arg;
@@ -225,7 +238,8 @@ void *prog_thread(void *arg)
 
 int main(void) {
 
-    printf("\n\nMeasure performance of SHA256 and Keccak in ticks needed to calculate %d hash operations and in hash operations per tick.\n\n", num_iterations);
+    printf( "\n\nMeasure performance of SHA256 and Keccak in ticks needed to calculate "
+            "%d hash operations and in hash operations per tick.\n\n", num_iterations);
 
     /* Initialize */
     int32_t it_counter = 0;
@@ -234,11 +248,15 @@ int main(void) {
     uint64_t ticks_dif;
     char ticks_buf[32];
 
-    /* This thread prints the current benchmarking progress (i.e. the number of iterations finished) */
-    /* Native board only */
-    kernel_pid_t prog_thread_pid = thread_create(prog_thread_stack, sizeof(prog_thread_stack),
-                                    THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_SLEEPING,
-                                    prog_thread, &it_counter, "prog_thread");
+    /*
+        This thread prints the current benchmarking progress
+        (i.e. the number of iterations finished)
+        Native board only
+    */
+    kernel_pid_t prog_thread_pid =
+                thread_create(prog_thread_stack, sizeof(prog_thread_stack),
+                                THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_SLEEPING,
+                                prog_thread, &it_counter, "prog_thread");
     msg_t msg;
 
     /* Iterate through all desired string lengths */
@@ -278,7 +296,9 @@ int main(void) {
         }
         ticks_dif = (uint64_t) (end_ticks.ticks64 - start_ticks.ticks64);
         get_floatstring(ticks_buf, 32, num_iterations, ticks_dif, 8, 5, 1);
-        printf("Performance of SHA256: %d hash operations in %u ticks (%s hash operations per tick).\n\n", num_iterations, (unsigned int) ticks_dif, ticks_buf);
+        printf( "Performance of SHA256: %d hash operations in %u ticks "
+                "(%s hash operations per tick).\n\n",
+                num_iterations, (unsigned int) ticks_dif, ticks_buf);
         
         /* Measure performance of Keccak */
         printf("Measure performance of Keccak.\n");
@@ -292,7 +312,10 @@ int main(void) {
         /* Rate for benchmark with c=512 for the landmark security level of 256 bits */
         keccak_rates[1] = 800-512;
         
-        /* Calculate rate for benchmark normalized around the number of full state transformations (regardless of state size) */
+        /*
+            Calculate rate for benchmark normalized around the number of full state transformations
+            (regardless of state size)
+        */
         keccak_rates[2] = 8 * (hashbitlen/8 + (hashbitlen*hashbitlen/64)/databytelen);
         keccak_rates[2] += (8 - keccak_rates[0] % 8) % 8;
 
@@ -302,11 +325,14 @@ int main(void) {
 
         for (uint32_t j=0; j<4; j++) {
             if (j==0) {
-                printf("Benchmark with c=256 for an equivalent security level to SHA-256 of 128 bits:\n");
+                printf( "Benchmark with c=256 for an equivalent security level "
+                        "to SHA-256 of 128 bits:\n");
             } else if (j==1) {
-                printf("Benchmark with c=512 for the landmark security level of 256 bits:\n");
+                printf( "Benchmark with c=512 for the landmark security level "
+                        "of 256 bits:\n");
             } else if (j==2) {
-                printf("Benchmark normalized around the number of full state transformations (regardless of state size):\n");
+                printf( "Benchmark normalized around the number of full state "
+                        "transformations (regardless of state size):\n");
             } else if (j==3) {
                 printf("Benchmark normalized around the state size:\n");
             }
@@ -316,7 +342,8 @@ int main(void) {
             }
             start_ticks = xtimer_now64();
             for (; it_counter<num_iterations; it_counter++) {
-                keccak_hash(&keccakHashInstance, data, 8*databytelen, keccakHashval, keccak_rates[j], 800-keccak_rates[j]);
+                keccak_hash(&keccakHashInstance, data, 8*databytelen, keccakHashval,
+                            keccak_rates[j], 800-keccak_rates[j]);
             }
             end_ticks = xtimer_now64();
             if (SHOW_PROGRESS) {
@@ -325,8 +352,10 @@ int main(void) {
             }
             ticks_dif = (uint64_t) (end_ticks.ticks64 - start_ticks.ticks64);
             get_floatstring(ticks_buf, 32, num_iterations, ticks_dif, 8, 5, 1);
-            printf("Performance of Keccak for r=%d and c=%d: %d hash operations in %u ticks (%s hash operations per tick).\n", 
-                keccak_rates[j], 800-keccak_rates[j], num_iterations, (unsigned int) ticks_dif, ticks_buf);
+            printf( "Performance of Keccak for r=%d and c=%d: %d hash operations "
+                    "in %u ticks (%s hash operations per tick).\n",
+                    keccak_rates[j], 800-keccak_rates[j], num_iterations,
+                    (unsigned int) ticks_dif, ticks_buf);
         }
 
         free(datastring);

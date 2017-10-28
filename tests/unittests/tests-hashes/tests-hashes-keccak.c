@@ -40,7 +40,8 @@ const BitLength databitlen = 80;
 const char datastring[] = "0123456789";
 const BitSequence* data = (unsigned char*) datastring;
 
-const char hashvalstring[] = "4c0ff0d8a1479dfe58fb0b55c7870e6c64e1c770fcd0bcb9fdc78d2570fb94a2";
+const char hashvalstring[] =
+            "4c0ff0d8a1479dfe58fb0b55c7870e6c64e1c770fcd0bcb9fdc78d2570fb94a2";
 BitSequence* hashval;
 
 static void setUp(void)
@@ -60,7 +61,8 @@ static void tearDown(void)
 static void test_keccak(void)
 {
     /* Testing hash initialization */
-    HashReturn return_init = Keccak_HashInitialize(hashInstance, rate, 800-rate, hashbitlen, delimitedSuffix);
+    HashReturn return_init = Keccak_HashInitialize(hashInstance, rate, 800-rate,
+                                                    hashbitlen, delimitedSuffix);
     TEST_ASSERT_EQUAL_INT(0, return_init);
 
     /* Testing hash update */
