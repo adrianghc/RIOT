@@ -11,7 +11,7 @@
  * @{
  *
  * @file
- * @brief       keccak crypto library tests
+ * @brief       Test cases for the Keccak hashing package
  *
  * @author      Adrian Herrmann <adrian.herrmann@fu-berlin.de>
  *
@@ -25,7 +25,6 @@
 
 #include "KeccakHash800.h"
 #include "embUnit.h"
-#include "tests-keccak.h"
 
 #define KeccakP200_excluded
 #define KeccakP400_excluded
@@ -33,7 +32,7 @@
 
 Keccak_HashInstance* hashInstance;
 
-const unsigned int rate = 480;
+const unsigned int rate = 544;
 const unsigned int hashbitlen = 256;
 const unsigned char delimitedSuffix = '\1';
 
@@ -41,7 +40,7 @@ const BitLength databitlen = 80;
 const char datastring[] = "0123456789";
 const BitSequence* data = (unsigned char*) datastring;
 
-const char hashvalstring[] = "792fd532040b69e7681598742ebc209f9ec1871a290627fbf72cad13346819df";
+const char hashvalstring[] = "4c0ff0d8a1479dfe58fb0b55c7870e6c64e1c770fcd0bcb9fdc78d2570fb94a2";
 BitSequence* hashval;
 
 static void setUp(void)
@@ -60,19 +59,19 @@ static void tearDown(void)
 
 static void test_keccak(void)
 {
-    printf("\nTesting hash initialization");
+    /* Testing hash initialization */
     HashReturn return_init = Keccak_HashInitialize(hashInstance, rate, 800-rate, hashbitlen, delimitedSuffix);
     TEST_ASSERT_EQUAL_INT(0, return_init);
 
-    printf("\nTesting hash update");
+    /* Testing hash update */
     HashReturn return_update = Keccak_HashUpdate(hashInstance, data, databitlen);
     TEST_ASSERT_EQUAL_INT(0, return_update);
 
-    printf("\nTesting hash finalization");
+    /* Testing hash finalization */
     HashReturn return_final = Keccak_HashFinal(hashInstance, hashval);
     TEST_ASSERT_EQUAL_INT(0, return_final);
 
-    printf("\nComparing digest with expected result");
+    /* Comparing digest with expected result */
     uint8_t eq = 1;
     char hashvalbuf[2];
 
@@ -88,7 +87,7 @@ static void test_keccak(void)
     TEST_ASSERT_EQUAL_INT(1, eq);
 }
 
-Test *tests_keccak_all(void)
+Test *tests_hashes_keccak_tests(void)
 {
     EMB_UNIT_TESTFIXTURES(fixtures) {
         new_TestFixture(test_keccak)
@@ -96,9 +95,4 @@ Test *tests_keccak_all(void)
 
     EMB_UNIT_TESTCALLER(keccak_tests, setUp, tearDown, fixtures);
     return (Test*)&keccak_tests;
-}
-
-void tests_keccak(void)
-{
-    TESTS_RUN(tests_keccak_all());
 }

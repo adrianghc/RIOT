@@ -1,3 +1,4 @@
 USEMODULE += hashes
 USEMODULE += crypto
+USEPKG += keccak
 CFLAGS += -DCRYPTO_AES
