@@ -26,10 +26,6 @@
 
 #include <stdint.h>
 
-#ifndef BOARD_NATIVE
-#define BOARD_NATIVE
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
