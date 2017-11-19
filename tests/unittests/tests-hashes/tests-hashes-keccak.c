@@ -86,11 +86,11 @@ static void test_keccak800(void)
 
     /* Comparing digest with expected result */
     uint8_t eq = 1;
-    char hashvalbuf[2];
+    char hashvalbuf[5];
 
     for (uint8_t i=0; i<hashbitlen/8; i++) {
         sprintf(hashvalbuf, "%02x", hashval800[i]);
-        
+
         if (hashvalbuf[0] != hashvalstring800[2*i] || hashvalbuf[1] != hashvalstring800[2*i+1]) {
             eq = 0;
             break;
@@ -117,11 +117,11 @@ static void test_keccak1600(void)
 
     /* Comparing digest with expected result */
     uint8_t eq = 1;
-    char hashvalbuf[2];
+    char hashvalbuf[5];
 
     for (uint8_t i=0; i<hashbitlen/8; i++) {
         sprintf(hashvalbuf, "%02x", hashval1600[i]);
-        
+
         if (hashvalbuf[0] != hashvalstring1600[2*i] || hashvalbuf[1] != hashvalstring1600[2*i+1]) {
             eq = 0;
             break;
