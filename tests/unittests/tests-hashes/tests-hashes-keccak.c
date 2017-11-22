@@ -26,8 +26,8 @@
 #include "KeccakHash1600.h"
 #include "embUnit.h"
 
-Keccak800_HashInstance* hash800Instance;
-Keccak1600_HashInstance* hash1600Instance;
+Keccak800Hash_instance* hash800Instance;
+Keccak1600Hash_instance* hash1600Instance;
 
 const BitLength databitlen = 80;
 const char datastring[] = "0123456789";
@@ -44,10 +44,10 @@ BitSequence* hashval1600;
 static void setUp(void)
 {
     /* Initialize */
-    hash800Instance = malloc(sizeof(Keccak800_HashInstance));
+    hash800Instance = malloc(sizeof(Keccak800Hash_instance));
     hashval800 = malloc(32);
 
-    hash1600Instance = malloc(sizeof(Keccak1600_HashInstance));
+    hash1600Instance = malloc(sizeof(Keccak1600Hash_instance));
     hashval1600 = malloc(32);
 }
 
@@ -67,11 +67,11 @@ static void test_keccak800(void)
     Keccak800Hash_256_initialize(hash800Instance);
 
     /* Testing hash update */
-    Hash800Return return_update = Keccak800_HashUpdate(hash800Instance, data, databitlen);
+    Hash800Return return_update = Keccak800Hash_update(hash800Instance, data, databitlen);
     TEST_ASSERT_EQUAL_INT(0, return_update);
 
     /* Testing hash finalization */
-    Hash800Return return_final = Keccak800_HashFinal(hash800Instance, hashval800);
+    Hash800Return return_final = Keccak800Hash_final(hash800Instance, hashval800);
     TEST_ASSERT_EQUAL_INT(0, return_final);
 
     /* Comparing digest with expected result */
@@ -96,11 +96,11 @@ static void test_keccak1600(void)
     SHA3_256_initialize(hash1600Instance);
 
     /* Testing hash update */
-    Hash1600Return return_update = Keccak_HashUpdate(hash1600Instance, data, databitlen);
+    Hash1600Return return_update = Keccak1600Hash_update(hash1600Instance, data, databitlen);
     TEST_ASSERT_EQUAL_INT(0, return_update);
 
     /* Testing hash finalization */
-    Hash1600Return return_final = Keccak_HashFinal(hash1600Instance, hashval1600);
+    Hash1600Return return_final = Keccak1600Hash_final(hash1600Instance, hashval1600);
     TEST_ASSERT_EQUAL_INT(0, return_final);
 
     /* Comparing digest with expected result */

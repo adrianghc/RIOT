@@ -54,7 +54,7 @@ extern "C" {
 #endif
 
 #define Hash1600Return  HashReturn
-#define Keccak1600_HashInstance Keccak_HashInstance
+#define Keccak1600Hash_instance Keccak_HashInstance
 
 /**
   * Function to initialize the Keccak[r, c] sponge function instance used in sequential hashing mode.
@@ -71,55 +71,55 @@ extern "C" {
   * @pre    One must have r+c=1600 and the rate a multiple of 8 bits in this implementation.
   * @return SUCCESS if successful, FAIL otherwise.
   */
-#define Keccak1600_HashInitialize(hashInstance, rate, capacity, hashbitlen, delimitedSuffix)  Keccak_HashInitialize(hashInstance, rate, capacity, hashbitlen, delimitedSuffix)
+#define Keccak1600Hash_initialize(hashInstance, rate, capacity, hashbitlen, delimitedSuffix)  Keccak_HashInitialize(hashInstance, rate, capacity, hashbitlen, delimitedSuffix)
 
 /** Function to initialize a SHAKE128 instance as specified in the FIPS 202 standard.
   * @param  hashInstance  Pointer to the hash instance to be initialized.
   */
-static inline void SHAKE128_initialize(Keccak1600_HashInstance *hashInstance) {
-    Keccak1600_HashInitialize(hashInstance, 1344, 256, 0, 0x1F);
+static inline void SHAKE128_initialize(Keccak1600Hash_instance *hashInstance) {
+    Keccak1600Hash_initialize(hashInstance, 1344, 256, 0, 0x1F);
 }
 
 /** Function to initialize a SHAKE256 instance as specified in the FIPS 202 standard.
   * @param  hashInstance  Pointer to the hash instance to be initialized.
   */
-static inline void SHAKE256_initialize(Keccak1600_HashInstance *hashInstance) {
-    Keccak1600_HashInitialize(hashInstance, 1088, 512, 0, 0x1F);
+static inline void SHAKE256_initialize(Keccak1600Hash_instance *hashInstance) {
+    Keccak1600Hash_initialize(hashInstance, 1088, 512, 0, 0x1F);
 }
 
 /** Function to initialize a Keccak-1600 instance for hashing with a security level of 128 bits.
   * @param  hashInstance  Pointer to the hash instance to be initialized.
   */
-static inline void SHA3_128_initialize(Keccak1600_HashInstance *hashInstance) {
-    Keccak1600_HashInitialize(hashInstance, 1344, 256, 128, 0x06);
+static inline void SHA3_128_initialize(Keccak1600Hash_instance *hashInstance) {
+    Keccak1600Hash_initialize(hashInstance, 1344, 256, 128, 0x06);
 }
 
 /** Function to initialize a SHA3-224 instance as specified in the FIPS 202 standard.
   * @param  hashInstance  Pointer to the hash instance to be initialized.
   */
-static inline void SHA3_224_initialize(Keccak1600_HashInstance *hashInstance) {
-    Keccak1600_HashInitialize(hashInstance, 1152, 448, 224, 0x06);
+static inline void SHA3_224_initialize(Keccak1600Hash_instance *hashInstance) {
+    Keccak1600Hash_initialize(hashInstance, 1152, 448, 224, 0x06);
 }
 
 /** Function to initialize a SHA3-256 instance as specified in the FIPS 202 standard.
   * @param  hashInstance  Pointer to the hash instance to be initialized.
   */
-static inline void SHA3_256_initialize(Keccak1600_HashInstance *hashInstance) {
-    Keccak1600_HashInitialize(hashInstance, 1088, 512, 256, 0x06);
+static inline void SHA3_256_initialize(Keccak1600Hash_instance *hashInstance) {
+    Keccak1600Hash_initialize(hashInstance, 1088, 512, 256, 0x06);
 }
 
 /** Function to initialize a SHA3-384 instance as specified in the FIPS 202 standard.
   * @param  hashInstance  Pointer to the hash instance to be initialized.
   */
-static inline void SHA3_384_initialize(Keccak1600_HashInstance *hashInstance) {
-    Keccak1600_HashInitialize(hashInstance, 832, 768, 384, 0x06);
+static inline void SHA3_384_initialize(Keccak1600Hash_instance *hashInstance) {
+    Keccak1600Hash_initialize(hashInstance, 832, 768, 384, 0x06);
 }
 
 /** Function to initialize a SHA3-384 instance as specified in the FIPS 202 standard.
   * @param  hashInstance  Pointer to the hash instance to be initialized.
   */
-static inline void SHA3_512_initialize(Keccak1600_HashInstance *hashInstance) {
-    Keccak1600_HashInitialize(hashInstance, 576, 1024, 512, 0x06);
+static inline void SHA3_512_initialize(Keccak1600Hash_instance *hashInstance) {
+    Keccak1600Hash_initialize(hashInstance, 576, 1024, 512, 0x06);
 }
 
 /**
@@ -132,7 +132,7 @@ static inline void SHA3_512_initialize(Keccak1600_HashInstance *hashInstance) {
   * @pre    In the previous call to Keccak_HashUpdate(), databitlen was a multiple of 8.
   * @return SUCCESS if successful, FAIL otherwise.
   */
-#define Keccak1600_HashUpdate(hashInstance, data, databitlen) Keccak_HashUpdate(hashInstance, data, databitlen)
+#define Keccak1600Hash_update(hashInstance, data, databitlen) Keccak_HashUpdate(hashInstance, data, databitlen)
 
 /**
   * Function to call after all input blocks have been input and to get
@@ -145,7 +145,7 @@ static inline void SHA3_512_initialize(Keccak1600_HashInstance *hashInstance) {
   * @param  hashval     Pointer to the buffer where to store the output data.
   * @return SUCCESS if successful, FAIL otherwise.
   */
-#define Keccak1600_HashFinal(hashInstance, hashval) Keccak_HashFinal(hashInstance, hashval)
+#define Keccak1600Hash_final(hashInstance, hashval) Keccak_HashFinal(hashInstance, hashval)
 
  /**
   * Function to squeeze output data.
@@ -156,7 +156,7 @@ static inline void SHA3_512_initialize(Keccak1600_HashInstance *hashInstance) {
   * @pre    @a databitlen is a multiple of 8.
   * @return SUCCESS if successful, FAIL otherwise.
   */
-#define Keccak1600_HashSqueeze(hashInstance, data, databitlen)  Keccak_HashSqueeze(hashInstance, data, databitlen)
+#define Keccak1600Hash_squeeze(hashInstance, data, databitlen)  Keccak_HashSqueeze(hashInstance, data, databitlen)
 
 #endif
 

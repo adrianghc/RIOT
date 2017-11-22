@@ -44,7 +44,7 @@ For more information, please refer to <http://unlicense.org/>
 
 /* ---------------------------------------------------------------- */
 
-Hash800Return Keccak800_HashInitialize(Keccak800_HashInstance *instance, unsigned int rate, unsigned int capacity, unsigned int hashbitlen, unsigned char delimitedSuffix)
+Hash800Return Keccak800Hash_initialize(Keccak800Hash_instance *instance, unsigned int rate, unsigned int capacity, unsigned int hashbitlen, unsigned char delimitedSuffix)
 {
     Hash800Return result;
 
@@ -62,7 +62,7 @@ Hash800Return Keccak800_HashInitialize(Keccak800_HashInstance *instance, unsigne
 
 /* ---------------------------------------------------------------- */
 
-Hash800Return Keccak800_HashUpdate(Keccak800_HashInstance *instance, const BitSequence *data, BitLength databitlen)
+Hash800Return Keccak800Hash_update(Keccak800Hash_instance *instance, const BitSequence *data, BitLength databitlen)
 {
     if ((databitlen % 8) == 0) {
         return (Hash800Return)KeccakWidth800_SpongeAbsorb(&instance->sponge, data, databitlen/8);
@@ -89,7 +89,7 @@ Hash800Return Keccak800_HashUpdate(Keccak800_HashInstance *instance, const BitSe
 
 /* ---------------------------------------------------------------- */
 
-Hash800Return Keccak800_HashFinal(Keccak800_HashInstance *instance, BitSequence *hashval)
+Hash800Return Keccak800Hash_final(Keccak800Hash_instance *instance, BitSequence *hashval)
 {
     Hash800Return ret = (Hash800Return)KeccakWidth800_SpongeAbsorbLastFewBits(&instance->sponge, instance->delimitedSuffix);
     if (ret == SUCCESS_800) {
@@ -101,7 +101,7 @@ Hash800Return Keccak800_HashFinal(Keccak800_HashInstance *instance, BitSequence 
 
 /* ---------------------------------------------------------------- */
 
-Hash800Return Keccak800_HashSqueeze(Keccak800_HashInstance *instance, BitSequence *data, BitLength databitlen)
+Hash800Return Keccak800Hash_squeeze(Keccak800Hash_instance *instance, BitSequence *data, BitLength databitlen)
 {
     if ((databitlen % 8) != 0) {
         return FAIL_800;
