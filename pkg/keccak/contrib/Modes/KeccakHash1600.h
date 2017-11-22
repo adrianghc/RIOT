@@ -39,35 +39,18 @@ OTHER DEALINGS IN THE SOFTWARE.
 For more information, please refer to <http://unlicense.org/>
 */
 
-#ifndef KECCAKHASH800_H
-#define KECCAKHASH800_H
+#ifndef KECCAKHASH1600_H
+#define KECCAKHASH1600_H
 
 #define KeccakP200_excluded
 #define KeccakP400_excluded
 
-#ifndef KeccakP800_excluded
+#ifndef KeccakP1600_excluded
 
-#include "KeccakSpongeWidth800.h"
-#include <string.h>
+#include "KeccakHash.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#ifndef _Keccak_BitTypes_
-#define _Keccak_BitTypes_
-typedef unsigned char BitSequence;
-
-typedef size_t BitLength;
-#endif
-
-typedef enum { SUCCESS_800 = 0, FAIL_800 = 1, BAD_HASHLEN_800 = 2 } Hash800Return;
-
-typedef struct {
-    KeccakWidth800_SpongeInstance sponge;
-    unsigned int fixedOutputLength;
-    unsigned char delimitedSuffix;
-} Keccak800_HashInstance;
+#define Hash1600Return  HashReturn
+#define Keccak1600_HashInstance Keccak_HashInstance
 
 /**
   * Function to initialize the Keccak[r, c] sponge function instance used in sequential hashing mode.
@@ -81,51 +64,58 @@ typedef struct {
   *                         This is a byte containing from 0 to 7 bits
   *                         formatted like the @a delimitedData parameter of
   *                         the Keccak_SpongeAbsorbLastFewBits() function.
-  * @pre    One must have r+c=800 and the rate a multiple of 8 bits in this implementation.
+  * @pre    One must have r+c=1600 and the rate a multiple of 8 bits in this implementation.
   * @return SUCCESS if successful, FAIL otherwise.
   */
-Hash800Return Keccak800_HashInitialize(Keccak800_HashInstance *hashInstance, unsigned int rate, unsigned int capacity, unsigned int hashbitlen, unsigned char delimitedSuffix);
+#define Keccak1600_HashInitialize(hashInstance, rate, capacity, hashbitlen, delimitedSuffix)  Keccak_HashInitialize(hashInstance, rate, capacity, hashbitlen, delimitedSuffix)
 
-/** Function to initialize a Keccak-800 instance for XOF with a security level of 128 bits.
+/** Function to initialize a SHAKE128 instance as specified in the FIPS 202 standard.
   * @param  hashInstance  Pointer to the hash instance to be initialized.
   */
-static inline void Keccak800XOF_128_initialize(Keccak800_HashInstance *hashInstance) {
-    Keccak800_HashInitialize(hashInstance, 544, 256, 0, 0x1F);
+static inline void SHAKE128_initialize(Keccak1600_HashInstance *hashInstance) {
+    Keccak1600_HashInitialize(hashInstance, 1344, 256, 0, 0x1F);
 }
 
-/** Function to initialize a Keccak-800 instance for XOF with a security level of 256 bits.
+/** Function to initialize a SHAKE256 instance as specified in the FIPS 202 standard.
   * @param  hashInstance  Pointer to the hash instance to be initialized.
   */
-static inline void Keccak800XOF_256_initialize(Keccak800_HashInstance *hashInstance) {
-    Keccak800_HashInitialize(hashInstance, 288, 512, 0, 0x1F);
+static inline void SHAKE256_initialize(Keccak1600_HashInstance *hashInstance) {
+    Keccak1600_HashInitialize(hashInstance, 1088, 512, 0, 0x1F);
 }
 
-/** Function to initialize a Keccak-800 instance for hashing with a security level of 128 bits.
+/** Function to initialize a Keccak-1600 instance for hashing with a security level of 128 bits.
   * @param  hashInstance  Pointer to the hash instance to be initialized.
   */
-static inline void Keccak800Hash_128_initialize(Keccak800_HashInstance *hashInstance) {
-    Keccak800_HashInitialize(hashInstance, 544, 256, 128, 0x06);
+static inline void SHA3_128_initialize(Keccak1600_HashInstance *hashInstance) {
+    Keccak1600_HashInitialize(hashInstance, 1344, 256, 128, 0x06);
 }
 
-/** Function to initialize a Keccak-800 instance for hashing with a security level and output size of 224 bits.
+/** Function to initialize a SHA3-224 instance as specified in the FIPS 202 standard.
   * @param  hashInstance  Pointer to the hash instance to be initialized.
   */
-static inline void Keccak800Hash_224_initialize(Keccak800_HashInstance *hashInstance) {
-    Keccak800_HashInitialize(hashInstance, 352, 448, 224, 0x06);
+static inline void SHA3_224_initialize(Keccak1600_HashInstance *hashInstance) {
+    Keccak1600_HashInitialize(hashInstance, 1152, 448, 224, 0x06);
 }
 
-/** Function to initialize a Keccak-800 instance for hashing with a security level and output size of 256 bits.
+/** Function to initialize a SHA3-256 instance as specified in the FIPS 202 standard.
   * @param  hashInstance  Pointer to the hash instance to be initialized.
   */
-static inline void Keccak800Hash_256_initialize(Keccak800_HashInstance *hashInstance) {
-    Keccak800_HashInitialize(hashInstance, 288, 512, 256, 0x06);
+static inline void SHA3_256_initialize(Keccak1600_HashInstance *hashInstance) {
+    Keccak1600_HashInitialize(hashInstance, 1088, 512, 256, 0x06);
 }
 
-/** Function to initialize a Keccak-800 instance for hashing with a security level and output size of 384 bits.
+/** Function to initialize a SHA3-384 instance as specified in the FIPS 202 standard.
   * @param  hashInstance  Pointer to the hash instance to be initialized.
   */
-static inline void Keccak800Hash_384_initialize(Keccak800_HashInstance *hashInstance) {
-    Keccak800_HashInitialize(hashInstance, 32, 768, 384, 0x06);
+static inline void SHA3_384_initialize(Keccak1600_HashInstance *hashInstance) {
+    Keccak1600_HashInitialize(hashInstance, 832, 768, 384, 0x06);
+}
+
+/** Function to initialize a SHA3-384 instance as specified in the FIPS 202 standard.
+  * @param  hashInstance  Pointer to the hash instance to be initialized.
+  */
+static inline void SHA3_512_initialize(Keccak1600_HashInstance *hashInstance) {
+    Keccak1600_HashInitialize(hashInstance, 576, 1024, 512, 0x06);
 }
 
 /**
@@ -138,7 +128,7 @@ static inline void Keccak800Hash_384_initialize(Keccak800_HashInstance *hashInst
   * @pre    In the previous call to Keccak_HashUpdate(), databitlen was a multiple of 8.
   * @return SUCCESS if successful, FAIL otherwise.
   */
-Hash800Return Keccak800_HashUpdate(Keccak800_HashInstance *hashInstance, const BitSequence *data, BitLength databitlen);
+#define Keccak1600_HashUpdate(hashInstance, data, databitlen) Keccak_HashUpdate(hashInstance, data, databitlen)
 
 /**
   * Function to call after all input blocks have been input and to get
@@ -151,7 +141,7 @@ Hash800Return Keccak800_HashUpdate(Keccak800_HashInstance *hashInstance, const B
   * @param  hashval     Pointer to the buffer where to store the output data.
   * @return SUCCESS if successful, FAIL otherwise.
   */
-Hash800Return Keccak800_HashFinal(Keccak800_HashInstance *hashInstance, BitSequence *hashval);
+#define Keccak1600_HashFinal(hashInstance, hashval) Keccak_HashFinal(hashInstance, hashval)
 
  /**
   * Function to squeeze output data.
@@ -162,12 +152,8 @@ Hash800Return Keccak800_HashFinal(Keccak800_HashInstance *hashInstance, BitSeque
   * @pre    @a databitlen is a multiple of 8.
   * @return SUCCESS if successful, FAIL otherwise.
   */
-Hash800Return Keccak800_HashSqueeze(Keccak800_HashInstance *hashInstance, BitSequence *data, BitLength databitlen);
+#define Keccak1600_HashSqueeze(hashInstance, data, databitlen)  Keccak_HashSqueeze(hashInstance, data, databitlen)
 
 #endif
 
-#ifdef __cplusplus
-}
 #endif
-
-#endif /* KECCAKHASH800_H */
