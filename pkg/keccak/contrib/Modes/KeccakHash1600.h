@@ -49,6 +49,10 @@ For more information, please refer to <http://unlicense.org/>
 
 #include "KeccakHash.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define Hash1600Return  HashReturn
 #define Keccak1600_HashInstance Keccak_HashInstance
 
@@ -156,4 +160,8 @@ static inline void SHA3_512_initialize(Keccak1600_HashInstance *hashInstance) {
 
 #endif
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* KECCAKHASH1600_H */
