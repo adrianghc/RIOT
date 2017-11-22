@@ -5,9 +5,10 @@ Subject: [PATCH] squash
 
 ---
  HighLevel.build                         | 13 +++
- LowLevel.build                          |  9 ----
- Makefile.build                          |  6 +++++
- 3 files changed, 19 insertions(+), 9 deletions(-)
+ LowLevel.build                          |  5 ----
+ LowLevel.build                          |  1 ++++
+ Makefile.build                          |  5 +++++
+ 3 files changed, 19 insertions(+), 5 deletions(-)
 
 diff --git a/HighLevel.build b/HighLevel.build
 index f81ec5d..f9b7450 100644
@@ -44,19 +45,20 @@ diff --git a/LowLevel.build b/LowLevel.build
 index 3ea6b72..b26cf4b 100644
 --- a/LowLevel.build
 +++ b/LowLevel.build
-@@ -114,15 +114,6 @@ The fragments below allow to select the desired implementation of the permutatio
+@@ -114,15 +114,11 @@ The fragments below allow to select the desired implementation of the permutatio
  
      <!-- *** Low-level services *** -->
  
--    <fragment name="optimized">
+     <fragment name="optimized">
 -        <h>Common/brg_endian.h</h>
 -        <gcc>-fomit-frame-pointer</gcc>
--        <gcc>-O2</gcc>
+         <gcc>-O2</gcc>
++        <gcc>$(CFLAGS)</gcc>
 -        <gcc>-g0</gcc>
 -        <gcc>-march=native</gcc>
 -        <gcc>-mtune=native</gcc>
--    </fragment>
--
+     </fragment>
+ 
      <!-- Keccak-p[200] -->
  
      <fragment name="width200">
@@ -64,14 +66,6 @@ diff --git a/Makefile.build b/Makefile.build
 index fe6b6dc..f65e423 100644
 --- a/Makefile.build
 +++ b/Makefile.build
-@@ -17,6 +17,7 @@ http://creativecommons.org/publicdomain/zero/1.0/
- 
-     <xi:include href="HighLevel.build"/>
-     <xi:include href="LowLevel.build"/>
-+    <xi:include href="CompilerFlags.build"/>
-     <xi:include href="Ketje/Ketje.build"/>
-     <xi:include href="Keyak/Keyak.build"/>
-     <xi:include href="SUPERCOP/SUPERCOP.build"/>
 @@ -166,4 +167,9 @@ http://creativecommons.org/publicdomain/zero/1.0/
          </product>
      </group>
