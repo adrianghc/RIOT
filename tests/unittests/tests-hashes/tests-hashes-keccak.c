@@ -21,42 +21,34 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <string.h>
 
 #include "KeccakHash800.h"
-#include "KeccakHash.h"
+#include "KeccakHash1600.h"
 #include "embUnit.h"
 
-#define KeccakP200_excluded
-#define KeccakP400_excluded
-
 Keccak800_HashInstance* hash800Instance;
-Keccak_HashInstance* hash1600Instance;
-
-const unsigned int capacity = 256;
-const unsigned int hashbitlen = 256;
-const unsigned char delimitedSuffix = '\1';
+Keccak1600_HashInstance* hash1600Instance;
 
 const BitLength databitlen = 80;
 const char datastring[] = "0123456789";
 const BitSequence* data = (unsigned char*) datastring;
 
 const char hashvalstring800[] =
-            "4c0ff0d8a1479dfe58fb0b55c7870e6c64e1c770fcd0bcb9fdc78d2570fb94a2";
+            "a6305bbe48f1f8d2c58dfd9731974fe85321c09cba8a944b0635a9ba07443324";
 BitSequence* hashval800;
 
 const char hashvalstring1600[] =
-            "13dc3578c7c187ae2e72ceaae2341b3a5d58ea73a0fdbcd0efe9f52081172c5b";
+            "8f8eaad16cbf8722a2165b660d47fcfd8496a41c611da758f3bb70f809f01ee3";
 BitSequence* hashval1600;
 
 static void setUp(void)
 {
     /* Initialize */
     hash800Instance = malloc(sizeof(Keccak800_HashInstance));
-    hashval800 = malloc(hashbitlen / 8);
+    hashval800 = malloc(32);
 
-    hash1600Instance = malloc(sizeof(Keccak_HashInstance));
-    hashval1600 = malloc(hashbitlen / 8);
+    hash1600Instance = malloc(sizeof(Keccak1600_HashInstance));
+    hashval1600 = malloc(32);
 }
 
 static void tearDown(void)
@@ -72,9 +64,7 @@ static void tearDown(void)
 static void test_keccak800(void)
 {
     /* Testing hash initialization */
-    Hash800Return return_init = Keccak800_HashInitialize(hash800Instance, 800-capacity, capacity,
-                                                    hashbitlen, delimitedSuffix);
-    TEST_ASSERT_EQUAL_INT(0, return_init);
+    Keccak800Hash_256_initialize(hash800Instance);
 
     /* Testing hash update */
     Hash800Return return_update = Keccak800_HashUpdate(hash800Instance, data, databitlen);
@@ -88,7 +78,7 @@ static void test_keccak800(void)
     uint8_t eq = 1;
     char hashvalbuf[5];
 
-    for (uint8_t i=0; i<hashbitlen/8; i++) {
+    for (uint8_t i=0; i<32; i++) {
         sprintf(hashvalbuf, "%02x", hashval800[i]);
 
         if (hashvalbuf[0] != hashvalstring800[2*i] || hashvalbuf[1] != hashvalstring800[2*i+1]) {
@@ -103,23 +93,21 @@ static void test_keccak800(void)
 static void test_keccak1600(void)
 {
     /* Testing hash initialization */
-    HashReturn return_init = Keccak_HashInitialize(hash1600Instance, 1600-capacity, capacity,
-                                                    hashbitlen, delimitedSuffix);
-    TEST_ASSERT_EQUAL_INT(0, return_init);
+    SHA3_256_initialize(hash1600Instance);
 
     /* Testing hash update */
-    HashReturn return_update = Keccak_HashUpdate(hash1600Instance, data, databitlen);
+    Hash1600Return return_update = Keccak_HashUpdate(hash1600Instance, data, databitlen);
     TEST_ASSERT_EQUAL_INT(0, return_update);
 
     /* Testing hash finalization */
-    HashReturn return_final = Keccak_HashFinal(hash1600Instance, hashval1600);
+    Hash1600Return return_final = Keccak_HashFinal(hash1600Instance, hashval1600);
     TEST_ASSERT_EQUAL_INT(0, return_final);
 
     /* Comparing digest with expected result */
     uint8_t eq = 1;
     char hashvalbuf[5];
 
-    for (uint8_t i=0; i<hashbitlen/8; i++) {
+    for (uint8_t i=0; i<32; i++) {
         sprintf(hashvalbuf, "%02x", hashval1600[i]);
 
         if (hashvalbuf[0] != hashvalstring1600[2*i] || hashvalbuf[1] != hashvalstring1600[2*i+1]) {
