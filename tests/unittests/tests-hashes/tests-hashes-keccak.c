@@ -45,7 +45,7 @@ static void test_keccak800(void)
     keccak800hash_256_initialize(&hash800Instance);
 
     /* Testing hash update */
-    hash_return return_update = keccak800hash_update(&hash800Instance, data, 80);
+    hash_return return_update = keccak800hash_update(&hash800Instance, data, 8*strlen(datastring));
     TEST_ASSERT_EQUAL_INT(0, return_update);
 
     /* Testing hash finalization */
@@ -78,7 +78,7 @@ static void test_keccak1600(void)
     sha3_256_initialize(&hash1600Instance);
 
     /* Testing hash update */
-    hash_return return_update = keccak1600hash_update(&hash1600Instance, data, 80);
+    hash_return return_update = keccak1600hash_update(&hash1600Instance, data, 8*strlen(datastring));
     TEST_ASSERT_EQUAL_INT(0, return_update);
 
     /* Testing hash finalization */
