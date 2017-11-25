@@ -22,56 +22,34 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "KeccakHash800.h"
-#include "KeccakHash1600.h"
+#include "keccak800.h"
+#include "keccak1600.h"
 #include "embUnit.h"
 
-Keccak800Hash_instance* hash800Instance;
-Keccak1600Hash_instance* hash1600Instance;
-
-const BitLength databitlen = 80;
 const char datastring[] = "0123456789";
-const BitSequence* data = (unsigned char*) datastring;
+const bit_sequence* data = (unsigned char*) datastring;
 
 const char hashvalstring800[] =
             "a6305bbe48f1f8d2c58dfd9731974fe85321c09cba8a944b0635a9ba07443324";
-BitSequence* hashval800;
 
 const char hashvalstring1600[] =
             "8f8eaad16cbf8722a2165b660d47fcfd8496a41c611da758f3bb70f809f01ee3";
-BitSequence* hashval1600;
-
-static void setUp(void)
-{
-    /* Initialize */
-    hash800Instance = malloc(sizeof(Keccak800Hash_instance));
-    hashval800 = malloc(32);
-
-    hash1600Instance = malloc(sizeof(Keccak1600Hash_instance));
-    hashval1600 = malloc(32);
-}
-
-static void tearDown(void)
-{
-    /* Finalize */
-    free(hash800Instance);
-    free(hashval800);
-
-    free(hash1600Instance);
-    free(hashval1600);
-}
 
 static void test_keccak800(void)
 {
+    /* Initialize */
+    keccak800hash_instance hash800Instance;
+    bit_sequence hashval800[32];
+
     /* Testing hash initialization */
-    Keccak800Hash_256_initialize(hash800Instance);
+    keccak800hash_256_initialize(&hash800Instance);
 
     /* Testing hash update */
-    Hash800Return return_update = Keccak800Hash_update(hash800Instance, data, databitlen);
+    hash_return return_update = keccak800hash_update(&hash800Instance, data, 80);
     TEST_ASSERT_EQUAL_INT(0, return_update);
 
     /* Testing hash finalization */
-    Hash800Return return_final = Keccak800Hash_final(hash800Instance, hashval800);
+    hash_return return_final = keccak800hash_final(&hash800Instance, hashval800);
     TEST_ASSERT_EQUAL_INT(0, return_final);
 
     /* Comparing digest with expected result */
@@ -92,15 +70,19 @@ static void test_keccak800(void)
 
 static void test_keccak1600(void)
 {
+    /* Initialize */
+    keccak1600hash_instance hash1600Instance;
+    bit_sequence hashval1600[32];
+
     /* Testing hash initialization */
-    SHA3_256_initialize(hash1600Instance);
+    sha3_256_initialize(&hash1600Instance);
 
     /* Testing hash update */
-    Hash1600Return return_update = Keccak1600Hash_update(hash1600Instance, data, databitlen);
+    hash_return return_update = keccak1600hash_update(&hash1600Instance, data, 80);
     TEST_ASSERT_EQUAL_INT(0, return_update);
 
     /* Testing hash finalization */
-    Hash1600Return return_final = Keccak1600Hash_final(hash1600Instance, hashval1600);
+    hash_return return_final = keccak1600hash_final(&hash1600Instance, hashval1600);
     TEST_ASSERT_EQUAL_INT(0, return_final);
 
     /* Comparing digest with expected result */
@@ -126,6 +108,6 @@ Test *tests_hashes_keccak_tests(void)
         new_TestFixture(test_keccak1600)
     };
 
-    EMB_UNIT_TESTCALLER(keccak_tests, setUp, tearDown, fixtures);
+    EMB_UNIT_TESTCALLER(keccak_tests, NULL, NULL, fixtures);
     return (Test*)&keccak_tests;
 }
