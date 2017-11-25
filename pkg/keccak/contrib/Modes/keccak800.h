@@ -39,8 +39,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 For more information, please refer to <http://unlicense.org/>
 */
 
-#ifndef KECCAKHASH800_H
-#define KECCAKHASH800_H
+#ifndef KECCAK800_H
+#define KECCAK800_H
 
 #define KeccakP200_excluded
 #define KeccakP400_excluded
@@ -48,35 +48,27 @@ For more information, please refer to <http://unlicense.org/>
 #ifndef KeccakP800_excluded
 
 #include "KeccakSpongeWidth800.h"
+#include "keccak_defs.h"
 #include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifndef _Keccak_BitTypes_
-#define _Keccak_BitTypes_
-typedef unsigned char BitSequence;
-
-typedef size_t BitLength;
-#endif
-
-typedef enum { SUCCESS_800 = 0, FAIL_800 = 1, BAD_HASHLEN_800 = 2 } Hash800Return;
-
 typedef struct {
     KeccakWidth800_SpongeInstance sponge;
-    unsigned int fixedOutputLength;
-    unsigned char delimitedSuffix;
-} Keccak800Hash_instance;
+    unsigned int fixed_output_length;
+    unsigned char delimited_suffix;
+} keccak800hash_instance;
 
 /**
   * Function to initialize the Keccak[r, c] sponge function instance used in sequential hashing mode.
-  * @param  hashInstance    Pointer to the hash instance to be initialized.
+  * @param  hash_instance    Pointer to the hash instance to be initialized.
   * @param  rate        The value of the rate r.
   * @param  capacity    The value of the capacity c.
   * @param  hashbitlen  The desired number of output bits,
   *                     or 0 for an arbitrarily-long output.
-  * @param  delimitedSuffix Bits that will be automatically appended to the end
+  * @param  delimited_suffix Bits that will be automatically appended to the end
   *                         of the input message, as in domain separation.
   *                         This is a byte containing from 0 to 7 bits
   *                         formatted like the @a delimitedData parameter of
@@ -84,85 +76,85 @@ typedef struct {
   * @pre    One must have r+c=800 and the rate a multiple of 8 bits in this implementation.
   * @return SUCCESS if successful, FAIL otherwise.
   */
-Hash800Return Keccak800Hash_initialize(Keccak800Hash_instance *hashInstance, unsigned int rate, unsigned int capacity, unsigned int hashbitlen, unsigned char delimitedSuffix);
+hash_return keccak800hash_initialize(keccak800hash_instance *hash_instance, unsigned int rate, unsigned int capacity, unsigned int hashbitlen, unsigned char delimited_suffix);
 
 /** Function to initialize a Keccak-800 instance for XOF with a security level of 128 bits.
-  * @param  hashInstance  Pointer to the hash instance to be initialized.
+  * @param  hash_instance  Pointer to the hash instance to be initialized.
   */
-static inline void Keccak800XOF_128_initialize(Keccak800Hash_instance *hashInstance) {
-    Keccak800Hash_initialize(hashInstance, 544, 256, 0, 0x1F);
+static inline void keccak800xof_128_initialize(keccak800hash_instance *hash_instance) {
+    keccak800hash_initialize(hash_instance, 544, 256, 0, 0x1F);
 }
 
 /** Function to initialize a Keccak-800 instance for XOF with a security level of 256 bits.
-  * @param  hashInstance  Pointer to the hash instance to be initialized.
+  * @param  hash_instance  Pointer to the hash instance to be initialized.
   */
-static inline void Keccak800XOF_256_initialize(Keccak800Hash_instance *hashInstance) {
-    Keccak800Hash_initialize(hashInstance, 288, 512, 0, 0x1F);
+static inline void keccak800xof_256_initialize(keccak800hash_instance *hash_instance) {
+    keccak800hash_initialize(hash_instance, 288, 512, 0, 0x1F);
 }
 
 /** Function to initialize a Keccak-800 instance for hashing with a security level of 128 bits.
-  * @param  hashInstance  Pointer to the hash instance to be initialized.
+  * @param  hash_instance  Pointer to the hash instance to be initialized.
   */
-static inline void Keccak800Hash_128_initialize(Keccak800Hash_instance *hashInstance) {
-    Keccak800Hash_initialize(hashInstance, 544, 256, 128, 0x06);
+static inline void keccak800hash_128_initialize(keccak800hash_instance *hash_instance) {
+    keccak800hash_initialize(hash_instance, 544, 256, 128, 0x06);
 }
 
 /** Function to initialize a Keccak-800 instance for hashing with a security level and output size of 224 bits.
-  * @param  hashInstance  Pointer to the hash instance to be initialized.
+  * @param  hash_instance  Pointer to the hash instance to be initialized.
   */
-static inline void Keccak800Hash_224_initialize(Keccak800Hash_instance *hashInstance) {
-    Keccak800Hash_initialize(hashInstance, 352, 448, 224, 0x06);
+static inline void keccak800hash_224_initialize(keccak800hash_instance *hash_instance) {
+    keccak800hash_initialize(hash_instance, 352, 448, 224, 0x06);
 }
 
 /** Function to initialize a Keccak-800 instance for hashing with a security level and output size of 256 bits.
-  * @param  hashInstance  Pointer to the hash instance to be initialized.
+  * @param  hash_instance  Pointer to the hash instance to be initialized.
   */
-static inline void Keccak800Hash_256_initialize(Keccak800Hash_instance *hashInstance) {
-    Keccak800Hash_initialize(hashInstance, 288, 512, 256, 0x06);
+static inline void keccak800hash_256_initialize(keccak800hash_instance *hash_instance) {
+    keccak800hash_initialize(hash_instance, 288, 512, 256, 0x06);
 }
 
 /** Function to initialize a Keccak-800 instance for hashing with a security level and output size of 384 bits.
-  * @param  hashInstance  Pointer to the hash instance to be initialized.
+  * @param  hash_instance  Pointer to the hash instance to be initialized.
   */
-static inline void Keccak800Hash_384_initialize(Keccak800Hash_instance *hashInstance) {
-    Keccak800Hash_initialize(hashInstance, 32, 768, 384, 0x06);
+static inline void keccak800hash_384_initialize(keccak800hash_instance *hash_instance) {
+    keccak800hash_initialize(hash_instance, 32, 768, 384, 0x06);
 }
 
 /**
   * Function to give input data to be absorbed.
-  * @param  hashInstance    Pointer to the hash instance initialized by Keccak_HashInitialize().
+  * @param  hash_instance    Pointer to the hash instance initialized by keccak800hash_initialize().
   * @param  data        Pointer to the input data.
   *                     When @a databitLen is not a multiple of 8, the last bits of data must be
   *                     in the least significant bits of the last byte (little-endian convention).
   * @param  databitLen  The number of input bits provided in the input data.
-  * @pre    In the previous call to Keccak_HashUpdate(), databitlen was a multiple of 8.
+  * @pre    In the previous call to keccak800hash_update(), databitlen was a multiple of 8.
   * @return SUCCESS if successful, FAIL otherwise.
   */
-Hash800Return Keccak800Hash_update(Keccak800Hash_instance *hashInstance, const BitSequence *data, BitLength databitlen);
+hash_return keccak800hash_update(keccak800hash_instance *hash_instance, const bit_sequence *data, bit_length databitlen);
 
 /**
   * Function to call after all input blocks have been input and to get
-  * output bits if the length was specified when calling Keccak_HashInitialize().
-  * @param  hashInstance    Pointer to the hash instance initialized by Keccak_HashInitialize().
-  * If @a hashbitlen was not 0 in the call to Keccak_HashInitialize(), the number of
+  * output bits if the length was specified when calling keccak800hash_initialize().
+  * @param  hash_instance    Pointer to the hash instance initialized by keccak800hash_initialize().
+  * If @a hashbitlen was not 0 in the call to keccak800hash_initialize(), the number of
   *     output bits is equal to @a hashbitlen.
-  * If @a hashbitlen was 0 in the call to Keccak_HashInitialize(), the output bits
-  *     must be extracted using the Keccak_HashSqueeze() function.
+  * If @a hashbitlen was 0 in the call to keccak800hash_initialize(), the output bits
+  *     must be extracted using the keccak800hash_squeeze() function.
   * @param  hashval     Pointer to the buffer where to store the output data.
   * @return SUCCESS if successful, FAIL otherwise.
   */
-Hash800Return Keccak800Hash_final(Keccak800Hash_instance *hashInstance, BitSequence *hashval);
+hash_return keccak800hash_final(keccak800hash_instance *hash_instance, bit_sequence *hashval);
 
  /**
   * Function to squeeze output data.
-  * @param  hashInstance    Pointer to the hash instance initialized by Keccak_HashInitialize().
+  * @param  hash_instance    Pointer to the hash instance initialized by keccak800hash_initialize().
   * @param  data        Pointer to the buffer where to store the output data.
   * @param  databitlen  The number of output bits desired (must be a multiple of 8).
-  * @pre    Keccak_HashFinal() must have been already called.
+  * @pre    keccak800hash_final() must have been already called.
   * @pre    @a databitlen is a multiple of 8.
   * @return SUCCESS if successful, FAIL otherwise.
   */
-Hash800Return Keccak800Hash_squeeze(Keccak800Hash_instance *hashInstance, BitSequence *data, BitLength databitlen);
+hash_return keccak800hash_squeeze(keccak800hash_instance *hash_instance, bit_sequence *data, bit_length databitlen);
 
 #endif
 
@@ -170,4 +162,4 @@ Hash800Return Keccak800Hash_squeeze(Keccak800Hash_instance *hashInstance, BitSeq
 }
 #endif
 
-#endif /* KECCAKHASH800_H */
+#endif /* KECCAK800_H */

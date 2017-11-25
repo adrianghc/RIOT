@@ -8,7 +8,9 @@ Subject: [PATCH] squash
  LowLevel.build                          |  5 ----
  LowLevel.build                          |  1 ++++
  Makefile.build                          |  5 +++++
- 3 files changed, 19 insertions(+), 5 deletions(-)
+ Modes/KeccakHash.h                      |  4 ++++++
+ Modes/KeccakHash.h                      |  8 ------
+ 4 files changed, 23 insertions(+), 13 deletions(-)
 
 diff --git a/HighLevel.build b/HighLevel.build
 index f81ec5d..f9b7450 100644
@@ -18,8 +20,8 @@ index f81ec5d..f9b7450 100644
  
  * KeccakSpongeWidth{200, 400, 800, 1600}: the Keccak[r, c] sponge function, where r+c equals the given permutation width (200, 400, 800 or 1600).
  * KeccakSponge: the Keccak sponge functions for all widths.
-+* KeccakHash800: the Keccak hash implementation for a width of 800 bits
-+* KeccakHash1600: the Keccak hash implementation for a width of 1600 bits
++* Keccak800: the Keccak hash implementation for a width of 800 bits
++* Keccak1600: the Keccak hash implementation for a width of 1600 bits
  * FIPS202: all the functions approved in the FIPS 202 standard, i.e., the extendable output functions (SHAKE{128, 256}) and hash functions (SHA3-{224, 256, 384, 512}). This includes also the Keccak hash functions without suffix (e.g., such as Keccak[r=1088, c=512] as used in Ethereum).
  * SP800-185: all the functions defined in the NIST SP 800-185 standard, i.e., cSHAKE, TupleHash, KMAC and ParallelHash.
  * KeccakDuplexWidth{200, 400, 800, 1600}: the Keccak[r, c] duplex objects, where r+c equals the given permutation width (200, 400, 800 or 1600).
@@ -29,14 +31,14 @@ index f81ec5d..f9b7450 100644
      <fragment name="KeccakSponge" inherits="KeccakSpongeWidth200 KeccakSpongeWidth400 KeccakSpongeWidth800 KeccakSpongeWidth1600"/>
 +
 +	<!-- Custom -->
-+	<fragment name="KeccakHash800" inherits="KeccakSpongeWidth800">
-+		<c>Modes/KeccakHash800.c</c>
-+		<h>Modes/KeccakHash800.h</h>
++	<fragment name="Keccak800" inherits="KeccakSpongeWidth800">
++		<c>Modes/keccak800.c</c>
++		<h>Modes/keccak800.h</h>
 +	</fragment>
 +
-+	<fragment name="KeccakHash1600" inherits="KeccakSpongeWidth1600">
++	<fragment name="Keccak1600" inherits="KeccakSpongeWidth1600">
 +		<c>Modes/KeccakHash.c</c>
-+		<h>Modes/KeccakHash.h</h>
++		<h>Modes/keccak1600.h</h>
 +	</fragment>
  
      <!-- NIST standards -->
@@ -71,11 +73,36 @@ index fe6b6dc..f65e423 100644
      </group>
  
 +    <!-- Hashing with Keccak-800 or Keccak-1600 -->
-+    <target name="KeccakHashARMv6M.a" inherits="KeccakHash800 optimized800ARMv6Mu1 KeccakHash1600 optimized1600ARMv6Mu1"/>
-+    <target name="KeccakHashARMv7M.a" inherits="KeccakHash800 optimized800ARMv7Mu2 KeccakHash1600 inplace1600ARMv7M"/>
-+    <target name="KeccakHashNative.a" inherits="KeccakHash800 optimized800ufull KeccakHash1600 compact1600"/>
++    <target name="KeccakHashARMv6M.a" inherits="Keccak800 optimized800ARMv6Mu1 Keccak1600 optimized1600ARMv6Mu1"/>
++    <target name="KeccakHashARMv7M.a" inherits="Keccak800 optimized800ARMv7Mu2 Keccak1600 inplace1600ARMv7M"/>
++    <target name="KeccakHashNative.a" inherits="Keccak800 optimized800ufull Keccak1600 compact1600"/>
 +
  </build>
--- 
+diff --git a/Modes/KeccakHash.h b/Modes/KeccakHash.h
+index 0d12975..809e929 100644
+--- a/Modes/KeccakHash.h
++++ b/Modes/KeccakHash.h
+@@ -19,16 +19,12 @@ http://creativecommons.org/publicdomain/zero/1.0/
+ #ifndef KeccakP1600_excluded
+ 
+ #include "KeccakSpongeWidth1600.h"
++#include "keccak_defs.h"
+ #include <string.h>
+ 
+-#ifndef _Keccak_BitTypes_
+-#define _Keccak_BitTypes_
+-typedef unsigned char BitSequence;
+-
+-typedef size_t BitLength;
+-#endif
+-
+-typedef enum { SUCCESS = 0, FAIL = 1, BAD_HASHLEN = 2 } HashReturn;
++#define BitSequence bit_sequence
++#define BitLength   bit_length
++#define HashReturn  hash_return
+ 
+ typedef struct {
+     KeccakWidth1600_SpongeInstance sponge;
+ -- 
 2.14.1.windows.1
 
