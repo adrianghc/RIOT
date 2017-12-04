@@ -16,7 +16,7 @@ endif
 
 .PHONY: all
 
-all: 
+all:
 	@cp -r $(RIOTBASE)/pkg/keccak/contrib/Modes $(PKG_BUILDDIR)
 	$(MAKE) KeccakHash$(CPU_ARCHIVE_NAME).a -C $(PKG_BUILDDIR)
 	@cp $(PKG_BUILDDIR)/bin/KeccakHash$(CPU_ARCHIVE_NAME).a $(BINDIR)/keccak.a
