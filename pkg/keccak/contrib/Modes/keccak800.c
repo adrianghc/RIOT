@@ -42,9 +42,12 @@ For more information, please refer to <http://unlicense.org/>
 #include <string.h>
 #include "keccak800.h"
 
-/* ---------------------------------------------------------------- */
-
-hash_return keccak800hash_initialize(keccak800hash_instance *instance, unsigned int rate, unsigned int capacity, unsigned int hashbitlen, unsigned char delimited_suffix)
+hash_return keccak800hash_initialize(
+    keccak800hash_instance *instance,
+    unsigned int rate,
+    unsigned int capacity,
+    unsigned int hashbitlen,
+    unsigned char delimited_suffix)
 {
     hash_return result;
 
@@ -60,19 +63,25 @@ hash_return keccak800hash_initialize(keccak800hash_instance *instance, unsigned 
     return SUCCESS;
 }
 
-/* ---------------------------------------------------------------- */
-
-hash_return keccak800hash_update(keccak800hash_instance *instance, const bit_sequence *data, bit_length databitlen)
+hash_return keccak800hash_update(
+    keccak800hash_instance *instance,
+    const bit_sequence *data,
+    bit_length databitlen)
 {
     if ((databitlen % 8) == 0) {
         return (hash_return)KeccakWidth800_SpongeAbsorb(&instance->sponge, data, databitlen/8);
     } else {
-        hash_return ret = (hash_return)KeccakWidth800_SpongeAbsorb(&instance->sponge, data, databitlen/8);
+        hash_return ret = (hash_return)KeccakWidth800_SpongeAbsorb(
+                                            &instance->sponge,
+                                            data,
+                                            databitlen/8);
         if (ret == SUCCESS) {
             /* The last partial byte is assumed to be aligned on the least significant bits */
             unsigned char lastByte = data[databitlen/8];
             /* Concatenate the last few bits provided here with those of the suffix */
-            unsigned short delimitedLastBytes = (unsigned short)((unsigned short)lastByte | ((unsigned short)instance->delimited_suffix << (databitlen % 8)));
+            unsigned short delimitedLastBytes = 
+                (unsigned short)((unsigned short)lastByte | 
+                                ((unsigned short)instance->delimited_suffix << (databitlen % 8)));
             if ((delimitedLastBytes & 0xFF00) == 0x0000) {
                 instance->delimited_suffix = delimitedLastBytes & 0xFF;
             }
@@ -87,21 +96,25 @@ hash_return keccak800hash_update(keccak800hash_instance *instance, const bit_seq
     }
 }
 
-/* ---------------------------------------------------------------- */
-
 hash_return keccak800hash_final(keccak800hash_instance *instance, bit_sequence *hashval)
 {
-    hash_return ret = (hash_return)KeccakWidth800_SpongeAbsorbLastFewBits(&instance->sponge, instance->delimited_suffix);
+    hash_return ret = (hash_return)KeccakWidth800_SpongeAbsorbLastFewBits(
+                                        &instance->sponge,
+                                        instance->delimited_suffix);
     if (ret == SUCCESS) {
-        return (hash_return)KeccakWidth800_SpongeSqueeze(&instance->sponge, hashval, instance->fixed_output_length/8);
+        return (hash_return)KeccakWidth800_SpongeSqueeze(
+                                &instance->sponge,
+                                hashval,
+                                instance->fixed_output_length/8);
     } else {
         return ret;
     }
 }
 
-/* ---------------------------------------------------------------- */
-
-hash_return keccak800hash_squeeze(keccak800hash_instance *instance, bit_sequence *data, bit_length databitlen)
+hash_return keccak800hash_squeeze(
+    keccak800hash_instance *instance,
+    bit_sequence *data,
+    bit_length databitlen)
 {
     if ((databitlen % 8) != 0) {
         return FAIL;
