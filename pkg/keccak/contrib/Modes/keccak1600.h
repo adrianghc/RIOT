@@ -98,7 +98,7 @@ static inline void shake256_initialize(keccak1600hash_instance *hash_instance) {
     keccak1600hash_initialize(hash_instance, 1088, 512, 0, 0x1F);
 }
 
-/** @brief      Function to initialize a Keccak-1600 instance for hashing 
+/** @brief      Function to initialize a Keccak-1600 instance for hashing
   *             with a security level of 128 bits.
   * @param[in]  hash_instance  Pointer to the hash instance to be initialized.
   */

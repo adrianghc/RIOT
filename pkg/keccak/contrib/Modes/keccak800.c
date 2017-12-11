@@ -79,8 +79,8 @@ hash_return keccak800hash_update(
             /* The last partial byte is assumed to be aligned on the least significant bits */
             unsigned char lastByte = data[databitlen/8];
             /* Concatenate the last few bits provided here with those of the suffix */
-            unsigned short delimitedLastBytes = 
-                (unsigned short)((unsigned short)lastByte | 
+            unsigned short delimitedLastBytes =
+                (unsigned short)((unsigned short)lastByte |
                                 ((unsigned short)instance->delimited_suffix << (databitlen % 8)));
             if ((delimitedLastBytes & 0xFF00) == 0x0000) {
                 instance->delimited_suffix = delimitedLastBytes & 0xFF;
