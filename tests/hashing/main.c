@@ -34,27 +34,13 @@
 #include "shell.h"
 
 
-/* Stack size for the progress printing thread */
-#ifdef BOARD_NATIVE
-char prog_thread_stack[2100];
-#endif
-
 /* Stack size for the hashing threads */
 char hash_thread_stack[2400];
-
-/* Number of iterations */
-#ifdef BOARD_NATIVE
-const int num_iterations = 1e5;
-#endif
-
-#ifndef BOARD_NATIVE
-const int num_iterations = 1e0;
-#endif
 
 /* Digest length in bits */
 const uint16_t hashbitlen = 256;
 /* Delimited suffix for Keccak input padding */
-const unsigned char keccak_delimited_suffix = '\1';
+const unsigned char keccak_delimited_suffix = 0x06;
 
 /* Array with the lengths of the messages to be hashed */
 const bit_length databytelens[] = { 64, 100, 1024, 10240 };
@@ -245,63 +231,134 @@ void get_floatstring(char* buf, size_t buf_size, int64_t dividend, int64_t divis
     }
 }
 
-#ifdef BOARD_NATIVE
-
-/*
-    This thread prints the current benchmarking progress
-    (i.e. the number of iterations finished)
-    Native board only
-*/
-void *prog_thread(void *arg)
-{
-    uint32_t *i = arg;
-
-    while (1) {
-        msg_t msg;
-        xtimer_sleep(1);
-        if (msg_try_receive(&msg) == 1) {
-            if (msg.content.value == 1) {
-                thread_sleep();
-            } else if (msg.content.value == 2) {
-                printf("\n");
-                return NULL;
-            }
-        } else {
-            printf("\tProgress: %"PRIu32"\r", *i);
-        }
-    }
-}
-
-#endif
-
-int main(void) {
-
-    printf( "\n\nMeasure performance of SHA256 and Keccak in ticks needed to calculate "
-            "%d hash operations and in hash operations per tick.\n\n", num_iterations);
+/* Benchmark for SHA-256 */
+void sha256_benchmark(size_t databytelen, char* datastring) {
 
     /* Initialize */
-    int32_t it_counter = 0;
     xtimer_ticks64_t start_ticks;
     xtimer_ticks64_t end_ticks;
     uint64_t ticks_dif;
     char ticks_buf[32];
 
-    /*
-        This thread prints the current benchmarking progress
-        (i.e. the number of iterations finished)
-        Native board only
-    */
-#ifdef BOARD_NATIVE
-    kernel_pid_t prog_thread_pid =
-            thread_create(prog_thread_stack, sizeof(prog_thread_stack),
-                            THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_SLEEPING,
-                            prog_thread, &it_counter, "prog_thread");
-    msg_t prog_msg;
-#endif
-
     kernel_pid_t hash_thread_pid;
     uintptr_t hash_thread_first_stacksize;
     uintptr_t hash_thread_last_stacksize;
+
+    /* Measure performance of SHA-256 */
+    printf("Measure performance of SHA-256.\n");
+    sha256_context_t ctx;
+    char sha256_hashval[hashbitlen/8];
+    sha256_struct args = { .ctx = &ctx, .data = datastring, .databytelen = databytelen, .hashval = sha256_hashval };
+
+    hash_thread_pid = thread_create(hash_thread_stack, sizeof(hash_thread_stack),
+                                THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_STACKTEST | THREAD_CREATE_SLEEPING,
+                                sha256_hash, &args, "sha256");
+    hash_thread_first_stacksize = thread_measure_stack_free(hash_thread_stack);
+    start_ticks = xtimer_now64();
+    thread_wakeup(hash_thread_pid);
+    end_ticks = xtimer_now64();
+
+    ticks_dif = (uint64_t) (end_ticks.ticks64 - start_ticks.ticks64);
+    get_floatstring(ticks_buf, 32, 1, ticks_dif, 8, 5, 1);
+    printf( "\tPerformance of SHA-256: %u ticks for one hash operation (%s hash operations per tick).\n",
+            (unsigned int) ticks_dif, ticks_buf);
+    hash_thread_last_stacksize = thread_measure_stack_free(hash_thread_stack);
+    printf("\tStack size: %u bytes\n\n", hash_thread_first_stacksize - hash_thread_last_stacksize);
+
+}
+
+/* Benchmark for Keccak */
+void keccak_benchmark(size_t databytelen, char* datastring, uint16_t p) {
+
+    /* Initialize */
+    xtimer_ticks64_t start_ticks;
+    xtimer_ticks64_t end_ticks;
+    uint64_t ticks_dif;
+    char ticks_buf[32];
+
+    kernel_pid_t hash_thread_pid = 0;
+    uintptr_t hash_thread_first_stacksize;
+    uintptr_t hash_thread_last_stacksize;
+
+    bit_sequence* data = (unsigned char*) datastring;
+
+    /* Measure performance of Keccak */
+    printf("Measure performance of Keccak-%u.\n", p);
+    bit_sequence keccak_hashval[hashbitlen/8];
+    int keccak_rates[4];
+
+    /* Rate for benchmark with c=256 for an equivalent security level to SHA-256 of 128 bits */
+    keccak_rates[0] = p-256;
+
+    /* Rate for benchmark with c=512 for the landmark security level of 256 bits */
+    keccak_rates[1] = p-512;
+    
+    /*
+        Calculate rate for benchmark normalized around the number of full state transformations
+        (regardless of state size)
+    */
+    keccak_rates[2] = 8 * (hashbitlen/8 + (hashbitlen*hashbitlen/64)/databytelen);
+    keccak_rates[2] += (8 - keccak_rates[0] % 8) % 8;
+
+    /* Calculate rate for benchmark normalized around the state size */
+    keccak_rates[3] = p/8 + p/8 * (hashbitlen/8) / databytelen;
+    keccak_rates[3] += (8 - keccak_rates[3] % 8) % 8;
+
+    for (uint32_t j=0; j<4; j++) {
+        if (j==0) {
+            printf("Benchmark with c=256 for an equivalent security level to SHA-256 of 128 bits:\n");
+        } else if (j==1) {
+            printf("Benchmark with c=512 for the landmark security level of 256 bits:\n");
+        } else if (j==2) {
+            printf("Benchmark normalized around the number of full state transformations (regardless of state size):\n");
+        } else if (j==3) {
+            printf("Benchmark normalized around the state size:\n");
+        }
+        
+        if (p == 800) {
+            keccak800hash_instance keccak800_hash_instance;
+            keccak800_struct args = {
+                                        .hash_instance = &keccak800_hash_instance,
+                                        .data = data,
+                                        .databitlen = 8*databytelen,
+                                        .hashval = keccak_hashval,
+                                        .rate = keccak_rates[j]
+                                    };
+            hash_thread_pid = thread_create(hash_thread_stack, sizeof(hash_thread_stack),
+                                        THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_STACKTEST | THREAD_CREATE_SLEEPING,
+                                        keccak800_hash, &args, "keccak800");
+        } else if (p == 1600) {
+            keccak1600hash_instance keccak1600_hash_instance;
+            keccak1600_struct args = {
+                                        .hash_instance = &keccak1600_hash_instance,
+                                        .data = data,
+                                        .databitlen = 8*databytelen,
+                                        .hashval = keccak_hashval,
+                                        .rate = keccak_rates[j]
+                                    };
+            hash_thread_pid = thread_create(hash_thread_stack, sizeof(hash_thread_stack),
+                                        THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_STACKTEST | THREAD_CREATE_SLEEPING,
+                                        keccak1600_hash, &args, "keccak1600");
+        }
+        hash_thread_first_stacksize = thread_measure_stack_free(hash_thread_stack);
+        start_ticks = xtimer_now64();
+        thread_wakeup(hash_thread_pid);
+        end_ticks = xtimer_now64();
+
+        ticks_dif = (uint64_t) (end_ticks.ticks64 - start_ticks.ticks64);
+        get_floatstring(ticks_buf, 32, 1, ticks_dif, 8, 5, 1);
+        printf( "\tPerformance of Keccak-%u for r=%d and c=%d: %u ticks for one hash operation (%s hash operations per tick).\n",
+                p, keccak_rates[j], p-keccak_rates[j], (unsigned int) ticks_dif, ticks_buf);
+        hash_thread_last_stacksize = thread_measure_stack_free(hash_thread_stack);
+        printf("\tStack size: %u bytes\n\n", hash_thread_first_stacksize - hash_thread_last_stacksize);
+    }
+
+}
+
+int main(void) {
+
+    printf( "\n\nMeasure performance of SHA256 and Keccak in ticks needed to calculate "
+            "one hash operation and in hash operations per tick.\n\n");
 
     /* Iterate through all desired string lengths */
     for (uint32_t k=0; k<sizeof(databytelens)/sizeof(databytelens[0]); k++) {
@@ -315,175 +372,19 @@ int main(void) {
         for (uint32_t l=0; l<databytelen; l++) {
             datastring[l] = random_uint32_range(0x00, 0xff);
         }
-        bit_sequence* data = (unsigned char*) datastring;
 
         /* Measure performance of SHA256 */
-        printf("Measure performance of SHA256.\n");
-        sha256_context_t ctx;
-        char sha256_hashval[hashbitlen/8];
-        sha256_struct args = { .ctx = &ctx, .data = datastring, .databytelen = databytelen, .hashval = sha256_hashval };
-        it_counter = 0;
-#ifdef BOARD_NATIVE
-        thread_wakeup(prog_thread_pid);
-#endif
-        start_ticks = xtimer_now64();
-        for (; it_counter<num_iterations; it_counter++) {
-            hash_thread_pid = thread_create(hash_thread_stack, sizeof(hash_thread_stack),
-                                        THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_STACKTEST | THREAD_CREATE_SLEEPING,
-                                        sha256_hash, &args, "sha256");
-            if (it_counter == 0) {
-                hash_thread_first_stacksize = thread_measure_stack_free(hash_thread_stack);
-            }
-            thread_wakeup(hash_thread_pid);
-        }
-        end_ticks = xtimer_now64();
-#ifdef BOARD_NATIVE
-        prog_msg.content.value = 1; // Ask progress printing thread to sleep
-        msg_send(&prog_msg, prog_thread_pid);
-#endif
-        ticks_dif = (uint64_t) (end_ticks.ticks64 - start_ticks.ticks64);
-        get_floatstring(ticks_buf, 32, num_iterations, ticks_dif, 8, 5, 1);
-        printf( "\tPerformance of SHA256: %d hash operations in %u ticks "
-                "(%s hash operations per tick).\n",
-                num_iterations, (unsigned int) ticks_dif, ticks_buf);
-        hash_thread_last_stacksize = thread_measure_stack_free(hash_thread_stack);
-        printf("\tStack size: %u bytes\n\n", hash_thread_first_stacksize - hash_thread_last_stacksize);
+        sha256_benchmark(databytelen, datastring);
         
         /* Measure performance of Keccak-800 */
-        printf("Measure performance of Keccak-800.\n");
-        keccak800hash_instance keccak800_hash_instance;
-        bit_sequence keccak800_hashval[hashbitlen/8];
-        int keccak800_rates[4];
-
-        /* Rate for benchmark with c=256 for an equivalent security level to SHA-256 of 128 bits */
-        keccak800_rates[0] = 800-256;
-
-        /* Rate for benchmark with c=512 for the landmark security level of 256 bits */
-        keccak800_rates[1] = 800-512;
-        
-        /*
-            Calculate rate for benchmark normalized around the number of full state transformations
-            (regardless of state size)
-        */
-        keccak800_rates[2] = 8 * (hashbitlen/8 + (hashbitlen*hashbitlen/64)/databytelen);
-        keccak800_rates[2] += (8 - keccak800_rates[0] % 8) % 8;
-
-        /* Calculate rate for benchmark normalized around the state size */
-        keccak800_rates[3] = 100 + 100 * (hashbitlen/8) / databytelen;
-        keccak800_rates[3] += (8 - keccak800_rates[3] % 8) % 8;
-
-        for (uint32_t j=0; j<4; j++) {
-            if (j==0) {
-                printf( "Benchmark with c=256 for an equivalent security level "
-                        "to SHA-256 of 128 bits:\n");
-            } else if (j==1) {
-                printf( "Benchmark with c=512 for the landmark security level "
-                        "of 256 bits:\n");
-            } else if (j==2) {
-                printf( "Benchmark normalized around the number of full state "
-                        "transformations (regardless of state size):\n");
-            } else if (j==3) {
-                printf("Benchmark normalized around the state size:\n");
-            }
-            keccak800_struct args = {
-                                        .hash_instance = &keccak800_hash_instance,
-                                        .data = data,
-                                        .databitlen = 8*databytelen,
-                                        .hashval = keccak800_hashval,
-                                        .rate = keccak800_rates[j]
-                                    };
-            it_counter = 0;
-#ifdef BOARD_NATIVE
-            thread_wakeup(prog_thread_pid);
-#endif
-            start_ticks = xtimer_now64();
-            for (; it_counter<num_iterations; it_counter++) {
-                hash_thread_pid = thread_create(hash_thread_stack, sizeof(hash_thread_stack),
-                                            THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_STACKTEST | THREAD_CREATE_SLEEPING,
-                                            keccak800_hash, &args, "keccak800");
-                if (it_counter == 0) {
-                    hash_thread_first_stacksize = thread_measure_stack_free(hash_thread_stack);
-                }
-                thread_wakeup(hash_thread_pid);
-            }
-            end_ticks = xtimer_now64();
-#ifdef BOARD_NATIVE
-            prog_msg.content.value = 1; // Ask progress printing thread to sleep
-            msg_send(&prog_msg, prog_thread_pid);
-#endif
-            ticks_dif = (uint64_t) (end_ticks.ticks64 - start_ticks.ticks64);
-            get_floatstring(ticks_buf, 32, num_iterations, ticks_dif, 8, 5, 1);
-            printf( "\tPerformance of Keccak for r=%d and c=%d: %d hash operations "
-                    "in %u ticks (%s hash operations per tick).\n",
-                    keccak800_rates[j], 800-keccak800_rates[j], num_iterations,
-                    (unsigned int) ticks_dif, ticks_buf);
-            hash_thread_last_stacksize = thread_measure_stack_free(hash_thread_stack);
-            printf("\tStack size: %u bytes\n\n", hash_thread_first_stacksize - hash_thread_last_stacksize);
-        }
+        keccak_benchmark(databytelen, datastring, 800);
 
         /* Measure performance of Keccak-1600 */
-        printf("\nMeasure performance of Keccak-1600.\n");
-        keccak1600hash_instance keccak1600_hash_instance;
-        bit_sequence keccak1600_hashval[hashbitlen/8];
-        int keccak1600_rates[2];
-
-        /* Rate for benchmark with c=256 for an equivalent security level to SHA-256 of 128 bits */
-        keccak1600_rates[0] = 1600-256;
-
-        /* Rate for benchmark with c=512 for the landmark security level of 256 bits */
-        keccak1600_rates[1] = 1600-512;
-
-        for (uint32_t j=0; j<2; j++) {
-            if (j==0) {
-                printf( "Benchmark with c=256 for an equivalent security level "
-                        "to SHA-256 of 128 bits:\n");
-            } else if (j==1) {
-                printf( "Benchmark with c=512 for the landmark security level "
-                        "of 256 bits:\n");
-            }
-            keccak1600_struct args = {
-                                        .hash_instance = &keccak1600_hash_instance,
-                                        .data = data,
-                                        .databitlen = 8*databytelen,
-                                        .hashval = keccak1600_hashval,
-                                        .rate = keccak1600_rates[j]
-                                    };
-            it_counter = 0;
-#ifdef BOARD_NATIVE
-            thread_wakeup(prog_thread_pid);
-#endif
-            start_ticks = xtimer_now64();
-            for (; it_counter<num_iterations; it_counter++) {
-                hash_thread_pid = thread_create(hash_thread_stack, sizeof(hash_thread_stack),
-                                            THREAD_PRIORITY_MAIN - 1, THREAD_CREATE_STACKTEST | THREAD_CREATE_SLEEPING,
-                                            keccak1600_hash, &args, "keccak1600");
-                if (it_counter == 0) {
-                    hash_thread_first_stacksize = thread_measure_stack_free(hash_thread_stack);
-                }
-                thread_wakeup(hash_thread_pid);
-            }
-            end_ticks = xtimer_now64();
-#ifdef BOARD_NATIVE
-            prog_msg.content.value = 1; // Ask progress printing thread to sleep
-            msg_send(&prog_msg, prog_thread_pid);
-#endif
-            ticks_dif = (uint64_t) (end_ticks.ticks64 - start_ticks.ticks64);
-            get_floatstring(ticks_buf, 32, num_iterations, ticks_dif, 8, 5, 1);
-            printf( "\tPerformance of Keccak for r=%d and c=%d: %d hash operations "
-                    "in %u ticks (%s hash operations per tick).\n",
-                    keccak800_rates[j], 1600-keccak1600_rates[j], num_iterations,
-                    (unsigned int) ticks_dif, ticks_buf);
-            hash_thread_last_stacksize = thread_measure_stack_free(hash_thread_stack);
-            printf("\tStack size: %u bytes\n\n", hash_thread_first_stacksize - hash_thread_last_stacksize);
-        }
+        keccak_benchmark(databytelen, datastring, 1600);
 
     }
 
     printf("\n\nAll benchmarks finished!\n\n");
-#ifdef BOARD_NATIVE
-    prog_msg.content.value = 2; // Ask progress printing thread to terminate
-    msg_send(&prog_msg, prog_thread_pid);
-#endif
 
     return 0;
     
