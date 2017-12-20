@@ -55,10 +55,13 @@ For more information, please refer to <http://unlicense.org/>
 extern "C" {
 #endif
 
+/**
+ * @brief   A struct for an instance of Keccak-800, containing state and parameters.
+ */
 typedef struct {
-    KeccakWidth800_SpongeInstance sponge;
-    unsigned int fixed_output_length;
-    unsigned char delimited_suffix;
+    KeccakWidth800_SpongeInstance sponge; /**< The sponge instance. */
+    unsigned int fixed_output_length;     /**< The output length of the sponge instance. */
+    unsigned char delimited_suffix;       /**< The delimited suffix describing the padding rule. */
 } keccak800hash_instance;
 
 /**

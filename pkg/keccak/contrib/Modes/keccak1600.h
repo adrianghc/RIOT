@@ -54,8 +54,19 @@ For more information, please refer to <http://unlicense.org/>
 extern "C" {
 #endif
 
+/**
+ * @brief   A struct for an instance of Keccak-1600, containing state and parameters.
+ */
 #define keccak1600hash_instance Keccak_HashInstance
+
+/**
+ * @brief   The output length of the sponge instance.
+ */
 #define fixed_output_length     fixedOutputLength
+
+/**
+ * @brief   The delimited suffix describing the padding rule.
+ */
 #define delimited_suffix        delimitedSuffix
 
 /**
@@ -146,12 +157,12 @@ static inline void sha3_512_initialize(keccak1600hash_instance *hash_instance) {
   * @pre        In the previous call to keccak1600hash_update(), databitlen was a multiple of 8.
   * @return     SUCCESS if successful, FAIL otherwise.
   */
-static inline void keccak1600hash_update(
+static inline hash_return keccak1600hash_update(
     keccak1600hash_instance *hash_instance,
     const bit_sequence *data,
     bit_length databitlen)
 {
-    Keccak_HashUpdate(hash_instance, data, databitlen);
+    return Keccak_HashUpdate(hash_instance, data, databitlen);
 }
 
 /**
@@ -166,11 +177,11 @@ static inline void keccak1600hash_update(
   * @param[in]  hashval           Pointer to the buffer where to store the output data.
   * @return     SUCCESS if successful, FAIL otherwise.
   */
-static inline void keccak1600hash_final(
+static inline hash_return keccak1600hash_final(
     keccak1600hash_instance *hash_instance,
     bit_sequence *hashval)
 {
-    Keccak_HashFinal(hash_instance, hashval);
+    return Keccak_HashFinal(hash_instance, hashval);
 }
 
  /**
@@ -183,12 +194,12 @@ static inline void keccak1600hash_final(
   * @pre        @a databitlen is a multiple of 8.
   * @return     SUCCESS if successful, FAIL otherwise.
   */
-static inline void keccak1600hash_squeeze(
+static inline hash_return keccak1600hash_squeeze(
     keccak1600hash_instance *hash_instance,
     bit_sequence *data,
     bit_length databitlen)
 {
-    Keccak_HashSqueeze(hash_instance, data, databitlen);
+    return Keccak_HashSqueeze(hash_instance, data, databitlen);
 }
 
 #endif

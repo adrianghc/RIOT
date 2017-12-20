@@ -46,13 +46,28 @@ For more information, please refer to <http://unlicense.org/>
 extern "C" {
 #endif
 
-#ifndef _Keccak_BitTypes_
-#define _Keccak_BitTypes_
-typedef unsigned char bit_sequence;
-typedef size_t bit_length;
-#endif
+#include "KeccakHash.h"
 
-typedef enum { SUCCESS = 0, FAIL = 1, BAD_HASHLEN = 2 } hash_return;
+#ifdef _Keccak_BitTypes_
+
+/**
+ * @brief   A typedef for unsigned char, usually used for output buffers by Keccak.
+ */
+#define bit_sequence    BitSequence
+
+/**
+ * @brief   A typedef for size_t, usually used for the number of input bits provided
+ *          in the input data.
+ */
+#define bit_length      BitLength
+
+/**
+ * @brief   An enum indicating success or failure of the function.
+ *          SUCCESS = 0, FAIL = 1, BAD_HASHLEN = 2
+ */
+#define hash_return     HashReturn
+
+#endif
 
 #ifdef __cplusplus
 }
