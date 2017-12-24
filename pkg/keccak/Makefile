@@ -1,6 +1,6 @@
 PKG_NAME    := keccak
 PKG_URL     := https://github.com/gvanas/KeccakCodePackage
-PKG_VERSION := 3f441eb7090771a7611682a63fa9caa1dd85e387
+PKG_VERSION := bc592d1780a6b3204c26c6f872552ace8fc6fd65
 
 ifeq ($(CPU),native)
 	CPU_ARCHIVE_NAME := Native

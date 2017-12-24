@@ -62,9 +62,9 @@ index fe6b6dc..f65e423 100644
      </group>
  
 +    <!-- Hashing with Keccak-800 or Keccak-1600 -->
-+    <target name="KeccakHashARMv6M.a" inherits="Keccak800 optimized800ARMv6Mu1 Keccak1600 optimized1600ARMv6Mu1"/>
-+    <target name="KeccakHashARMv7M.a" inherits="Keccak800 optimized800ARMv7Mu2 Keccak1600 inplace1600ARMv7M"/>
-+    <target name="KeccakHashNative.a" inherits="Keccak800 optimized800ufull Keccak1600 compact1600"/>
++    <target name="KeccakHashARMv6M.a" inherits="Keccak800 optimized800ARMv6Mu1 Keccak1600 optimized1600ARMv6Mu2"/>
++    <target name="KeccakHashARMv7M.a" inherits="Keccak800 optimized800u2 Keccak1600 inplace1600ARMv7M"/>
++    <target name="KeccakHashNative.a" inherits="Keccak800 optimized800u2 Keccak1600 inplace1600bi"/>
 +
  </build>
  -- 
