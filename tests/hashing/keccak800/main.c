@@ -210,7 +210,7 @@ void keccak_benchmark(size_t databytelen, char* datastring, uint16_t p) {
     /* Measure performance of Keccak */
     printf("Measure performance of Keccak-%u.\n", p);
     bit_sequence keccak_hashval[hashbitlen/8];
-    int keccak_rates[4];
+    int keccak_rates[5];
 
     /* Rate for benchmark with c=256 for an equivalent security level to SHA-256 of 128 bits */
     keccak_rates[0] = p-256;
@@ -218,26 +218,44 @@ void keccak_benchmark(size_t databytelen, char* datastring, uint16_t p) {
     /* Rate for benchmark with c=512 for the landmark security level of 256 bits */
     keccak_rates[1] = p-512;
     
-    /*
-        Calculate rate for benchmark normalized around the number of full state transformations
-        (regardless of state size)
-    */
-    keccak_rates[2] = 8 * (hashbitlen/8 + (hashbitlen*hashbitlen/64)/databytelen);
-    keccak_rates[2] += (8 - keccak_rates[0] % 8) % 8;
+    /* Calculate rate for benchmark normalized around the number of iterations */
+    keccak_rates[2] = 2*hashbitlen + 2*hashbitlen*hashbitlen/(8*databytelen);
+    keccak_rates[2] += (8 - keccak_rates[2] % 8) % 8;
+    if (keccak_rates[2] <= 0 || keccak_rates[2] >= p) {
+        keccak_rates[2] = 0;
+    }
 
-    /* Calculate rate for benchmark normalized around the state size */
-    keccak_rates[3] = p/8 + p/8 * (hashbitlen/8) / databytelen;
+    /* Additional benchmark 1 */
+    keccak_rates[3] = 8 * (hashbitlen/8 + (hashbitlen*hashbitlen/64)/databytelen);
     keccak_rates[3] += (8 - keccak_rates[3] % 8) % 8;
+    if (keccak_rates[3] <= 0 || keccak_rates[3] >= p) {
+        keccak_rates[3] = 0;
+    }
 
-    for (uint32_t j=0; j<4; j++) {
+    /* Additional benchmark 2 */
+    keccak_rates[4] = p/8 + p/8 * (hashbitlen/8) / databytelen;
+    keccak_rates[4] += (8 - keccak_rates[4] % 8) % 8;
+    if (keccak_rates[4] <= 0 || keccak_rates[4] >= p) {
+        keccak_rates[4] = 0;
+    }
+
+    for (uint32_t j=0; j<5; j++) {
+        /* Skip when the rate is 0 */
+        if (keccak_rates[j] == 0) {
+            printf("Skip this benchmark.\n");
+            continue;
+        }
+
         if (j==0) {
             printf("Benchmark with c=256 for an equivalent security level to SHA-256 of 128 bits:\n");
         } else if (j==1) {
             printf("Benchmark with c=512 for the landmark security level of 256 bits:\n");
         } else if (j==2) {
-            printf("Benchmark normalized around the number of full state transformations (regardless of state size):\n");
+            printf("Benchmark normalized around the number of iterations:\n");
         } else if (j==3) {
-            printf("Benchmark normalized around the state size:\n");
+            printf("Additional benchmark 1:\n");
+        } else if (j==4) {
+            printf("Additional benchmark 2:\n");
         }
         
         keccak800hash_instance keccak800_hash_instance;
