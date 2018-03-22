@@ -48,7 +48,7 @@ volatile pm_blocker_t pm_blocker = PM_BLOCKER_INITIAL;
 
 void pm_set_lowest(void)
 {
-    pm_blocker_t blocker = (pm_blocker_t) pm_blocker;
+    pm_blocker_t blocker = pm_blocker;
     unsigned mode = PM_NUM_MODES;
     while (mode) {
         if (blocker.val_u8[mode-1]) {
@@ -88,10 +88,10 @@ void pm_unblock(unsigned mode)
 }
 
 #ifndef PROVIDES_PM_LAYERED_OFF
-void  pm_off(void)
+void pm_off(void)
 {
     pm_blocker.val_u32 = 0;
     pm_set_lowest();
-    while(1);
+    while(1) {}
 }
 #endif

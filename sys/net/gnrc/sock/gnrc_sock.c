@@ -18,7 +18,6 @@
 #include "net/af.h"
 #include "net/ipv6/hdr.h"
 #include "net/gnrc/ipv6/hdr.h"
-#include "net/gnrc/ipv6/netif.h"
 #include "net/gnrc/netreg.h"
 #include "net/udp.h"
 #include "utlist.h"
@@ -186,9 +185,9 @@ ssize_t gnrc_sock_send(gnrc_pktsnip_t *payload, sock_ip_ep_t *local,
     err_report.type = 0;
 
     while (err_report.type != GNRC_NETERR_MSG_TYPE) {
-        msg_try_receive(err_report);
+        msg_try_receive(&err_report);
         if (err_report.type != GNRC_NETERR_MSG_TYPE) {
-            msg_try_send(err_report, sched_active_pid);
+            msg_try_send(&err_report, sched_active_pid);
         }
     }
     if (err_report.content.value != GNRC_NETERR_SUCCESS) {

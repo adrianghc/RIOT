@@ -61,6 +61,11 @@ extern "C" {
 #define TIMER_CHAN          (4U)
 
 /**
+ * @brief   All STM QDEC timers have 2 capture channels
+ */
+#define QDEC_CHAN           (2U)
+
+/**
  * @brief   Use the shared SPI functions
  * @{
  */
@@ -72,9 +77,17 @@ extern "C" {
 /**
  * @brief   Number of usable low power modes
  */
-#if defined(CPU_FAM_STM32F1) || defined(CPU_FAM_STM32F2) \
-    || defined(CPU_FAM_STM32F4) || defined(DOXYGEN)
+#if defined(CPU_FAM_STM32F1) || defined(CPU_FAM_STM32F2) || \
+    defined(CPU_FAM_STM32F4) || defined(CPU_FAM_STM32L0) || defined(DOXYGEN)
 #define PM_NUM_MODES    (2U)
+
+/**
+ * @name    Power modes
+ * @{
+ */
+#define STM32_PM_STOP         (1U)
+#define STM32_PM_STANDBY      (0U)
+/** @} */
 #endif
 
 /**
@@ -243,6 +256,28 @@ typedef struct {
     gpio_af_t af;                   /**< alternate function used */
     uint8_t bus;                    /**< APB bus */
 } pwm_conf_t;
+
+/**
+ * @brief   QDEC channel
+ */
+typedef struct {
+    gpio_t pin;             /**< GPIO pin mapped to this channel */
+    uint8_t cc_chan;        /**< capture compare channel used */
+} qdec_chan_t;
+
+/**
+ * @brief   QDEC configuration
+ */
+typedef struct {
+    TIM_TypeDef *dev;               /**< Timer used */
+    uint32_t max;                   /**< Maximum counter value */
+    uint32_t rcc_mask;              /**< bit in clock enable register */
+    qdec_chan_t chan[QDEC_CHAN];    /**< channel mapping, set to {GPIO_UNDEF, 0}
+                                     *   if not used */
+    gpio_af_t af;                   /**< alternate function used */
+    uint8_t bus;                    /**< APB bus */
+    uint8_t irqn;                   /**< global IRQ channel */
+} qdec_conf_t;
 
 /**
  * @brief   Structure for UART configuration data

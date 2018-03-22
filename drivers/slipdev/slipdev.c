@@ -27,74 +27,13 @@
 #define SLIP_END_ESC           (0xdcU)
 #define SLIP_ESC_ESC           (0xddU)
 
-static int _send(netdev_t *dev, const struct iovec *vector, unsigned count);
-static int _recv(netdev_t *dev, void *buf, size_t len, void *info);
-static int _init(netdev_t *dev);
-static void _isr(netdev_t *dev);
-static int _get(netdev_t *dev, netopt_t opt, void *value, size_t max_len);
-static int _set(netdev_t *dev, netopt_t opt, const void *value,
-                size_t value_len);
-
-static const netdev_driver_t slip_driver = {
-    .send = _send,
-    .recv = _recv,
-    .init = _init,
-    .isr = _isr,
-    .get = _get,
-    .set = _set,
-};
-
-void slipdev_setup(slipdev_t *dev, const slipdev_params_t *params)
-{
-    /* set device descriptor fields */
-    memcpy(&dev->config, params, sizeof(dev->config));
-    dev->inbytes = 0U;
-    dev->inesc = 0U;
-    dev->netdev.driver = &slip_driver;
-}
-
-static inline void _add_byte_to_inbuf(slipdev_t *dev, uint8_t byte)
-{
-    if (ringbuffer_add_one(&dev->inbuf, byte) < 0) {
-        dev->inbytes++;
-    }
-}
-
-static void _slip_rx_cb(void *arg, uint8_t data)
+static void _slip_rx_cb(void *arg, uint8_t byte)
 {
     slipdev_t *dev = arg;
 
-    if ((data == SLIP_END) && (dev->netdev.event_callback != NULL)) {
-        int idx = cib_put(&dev->pktfifo_idx);
-        if (idx >= 0) {
-            dev->netdev.event_callback((netdev_t *)dev, NETDEV_EVENT_ISR);
-            dev->pktfifo[idx] = dev->inbytes;
-        }
-        else {
-            /* can't handover packet => dropping it */
-            ringbuffer_remove(&dev->inbuf, dev->inbytes);
-        }
-        dev->inbytes = 0;
-    }
-    else if (dev->inesc) {
-        dev->inesc = 0U;
-        uint8_t actual = (data == SLIP_END_ESC) ? SLIP_END :
-                         ((data == SLIP_ESC_ESC) ? SLIP_ESC : 0);
-
-        switch (data) {
-            case SLIP_END_ESC:
-            case SLIP_ESC_ESC:
-                _add_byte_to_inbuf(dev, actual);
-                break;
-            default:
-                break;
-        }
-    }
-    else if (data == SLIP_ESC) {
-        dev->inesc = 1U;
-    }
-    else {
-        _add_byte_to_inbuf(dev, data);
+    tsrb_add_one(&dev->inbuf, byte);
+    if ((byte == SLIP_END) && (dev->netdev.event_callback != NULL)) {
+        dev->netdev.event_callback((netdev_t *)dev, NETDEV_EVENT_ISR);
     }
 }
 
@@ -105,8 +44,7 @@ static int _init(netdev_t *netdev)
     DEBUG("slipdev: initializing device %p on UART %i with baudrate %" PRIu32 "\n",
           (void *)dev, dev->config.uart, dev->config.baudrate);
     /* initialize buffers */
-    ringbuffer_init(&dev->inbuf, dev->rxmem, sizeof(dev->rxmem));
-    cib_init(&dev->pktfifo_idx, SLIPDEV_PKTFIFO_SIZE);
+    tsrb_init(&dev->inbuf, dev->rxmem, sizeof(dev->rxmem));
     if (uart_init(dev->config.uart, dev->config.baudrate, _slip_rx_cb,
                   dev) != UART_OK) {
         LOG_ERROR("slipdev: error initializing UART %i with baudrate %" PRIu32 "\n",
@@ -121,16 +59,16 @@ static inline void _write_byte(slipdev_t *dev, uint8_t byte)
     uart_write(dev->config.uart, &byte, 1);
 }
 
-static int _send(netdev_t *netdev, const struct iovec *vector, unsigned count)
+static int _send(netdev_t *netdev, const iolist_t *iolist)
 {
     slipdev_t *dev = (slipdev_t *)netdev;
     int bytes = 0;
 
-    DEBUG("slipdev: sending vector of length %u\n", count);
-    for (unsigned i = 0; i < count; i++) {
-        uint8_t *data = vector[i].iov_base;
+    DEBUG("slipdev: sending iolist\n");
+    for (const iolist_t *iol = iolist; iol; iol = iol->iol_next) {
+        uint8_t *data = iol->iol_base;
 
-        for (unsigned j = 0; j < vector[i].iov_len; j++, data++) {
+        for (unsigned j = 0; j < iol->iol_len; j++, data++) {
             switch(*data) {
                 case SLIP_END:
                     /* escaping END byte*/
@@ -155,30 +93,71 @@ static int _send(netdev_t *netdev, const struct iovec *vector, unsigned count)
 static int _recv(netdev_t *netdev, void *buf, size_t len, void *info)
 {
     slipdev_t *dev = (slipdev_t *)netdev;
-    int res, idx = cib_peek(&dev->pktfifo_idx);
+    int res = 0;
 
     (void)info;
-    if (idx < 0) {
-        return -EFAULT;
-    }
     if (buf == NULL) {
         if (len > 0) {
-            /* drop packet */
-            cib_get(&dev->pktfifo_idx);
-            /* and remove data */
-            res = ringbuffer_remove(&dev->inbuf, len);
+            /* remove data */
+            for (; len > 0; len--) {
+                int byte = tsrb_get_one(&dev->inbuf);
+                if ((byte == (int)SLIP_END) || (byte < 0)) {
+                    /* end early if end of packet or ringbuffer is reached;
+                     * len might be larger than the actual packet */
+                    break;
+                }
+            }
+        } else {
+            /* the user was warned not to use a buffer size > `INT_MAX` ;-) */
+            res = (int)tsrb_avail(&dev->inbuf);
         }
-        else {
-            res = dev->pktfifo[idx];
-        }
-    }
-    else if (len < dev->pktfifo[idx]) {
-        res = -ENOBUFS;
     }
     else {
-        size_t bytes = dev->pktfifo[cib_get(&dev->pktfifo_idx)];
-        bytes = ringbuffer_get(&dev->inbuf, buf, bytes);
-        res = bytes;
+        int byte;
+        uint8_t *ptr = buf;
+
+        do {
+            if ((byte = tsrb_get_one(&dev->inbuf)) < 0) {
+                /* something went wrong, return error */
+                return -EIO;
+            }
+            switch (byte) {
+                case SLIP_END:
+                    break;
+                case SLIP_ESC:
+                    dev->inesc = 1;
+                    break;
+                case SLIP_END_ESC:
+                    if (dev->inesc) {
+                        *(ptr++) = SLIP_END;
+                        res++;
+                        dev->inesc = 0;
+                        break;
+                    }
+                    /* Intentionally falls through */
+                    /* to default when !dev->inesc */
+                case SLIP_ESC_ESC:
+                    if (dev->inesc) {
+                        *(ptr++) = SLIP_ESC;
+                        res++;
+                        dev->inesc = 0;
+                        break;
+                    }
+                    /* Intentionally falls through */
+                    /* to default when !dev->inesc */
+                default:
+                    *(ptr++) = (uint8_t)byte;
+                    res++;
+                    break;
+            }
+            if ((unsigned)res > len) {
+                while (byte != SLIP_END) {
+                    /* clear out unreceived packet */
+                    byte = tsrb_get_one(&dev->inbuf);
+                }
+                return -ENOBUFS;
+            }
+        } while (byte != SLIP_END);
     }
     return res;
 }
@@ -217,6 +196,23 @@ static int _set(netdev_t *netdev, netopt_t opt, const void *value,
     (void)value;
     (void)value_len;
     return -ENOTSUP;
+}
+
+static const netdev_driver_t slip_driver = {
+    .send = _send,
+    .recv = _recv,
+    .init = _init,
+    .isr = _isr,
+    .get = _get,
+    .set = _set,
+};
+
+void slipdev_setup(slipdev_t *dev, const slipdev_params_t *params)
+{
+    /* set device descriptor fields */
+    memcpy(&dev->config, params, sizeof(dev->config));
+    dev->inesc = 0U;
+    dev->netdev.driver = &slip_driver;
 }
 
 /** @} */

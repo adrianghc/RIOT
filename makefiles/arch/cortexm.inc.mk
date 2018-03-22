@@ -6,7 +6,7 @@ export CFLAGS_CPU   = -mcpu=$(MCPU) -mlittle-endian -mthumb $(CFLAGS_FPU)
 ifneq (llvm,$(TOOLCHAIN))
 # Clang (observed with v3.7) does not understand  -mno-thumb-interwork, only add if
 # not building with LLVM
-export CFLAGS_CPU  += -mno-thumb-interwork
+export CFLAGS      += -mno-thumb-interwork
 endif
 export CFLAGS_LINK  = -ffunction-sections -fdata-sections -fno-builtin -fshort-enums
 export CFLAGS_DBG  ?= -ggdb -g3
@@ -21,9 +21,6 @@ export LINKFLAGS += -T$(LINKER_SCRIPT) -Wl,--fatal-warnings
 
 export LINKFLAGS += $(CFLAGS_CPU) $(CFLAGS_DBG) $(CFLAGS_OPT) -static -lgcc -nostartfiles
 export LINKFLAGS += -Wl,--gc-sections
-
-# This CPU implementation is using the new core/CPU interface:
-export CFLAGS += -DCOREIF_NG=1
 
 # Tell the build system that the CPU depends on the Cortex-M common files:
 export USEMODULE += cortexm_common
@@ -88,8 +85,9 @@ endif
 
 # Explicitly tell the linker to link the startup code.
 #   Without this the interrupt vectors will not be linked correctly!
+VECTORS_O ?= $(BINDIR)/cpu/vectors.o
 ifeq ($(COMMON_STARTUP),)
-export UNDEF += $(BINDIR)/cpu/vectors.o
+export UNDEF += $(VECTORS_O)
 endif
 
 # CPU depends on the cortex-m common module, so include it:

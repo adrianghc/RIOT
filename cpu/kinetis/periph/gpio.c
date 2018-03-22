@@ -31,6 +31,11 @@
 #include "bit.h"
 #include "periph/gpio.h"
 
+#ifndef PORT_PCR_ODE_MASK
+/* For compatibility with Kinetis CPUs without open drain GPIOs (e.g. KW41Z) */
+#define PORT_PCR_ODE_MASK 0
+#endif
+
 /**
  * @brief   Get the OCR reg value from the gpio_mode_t value
  */
@@ -290,8 +295,8 @@ static inline void irq_handler(PORT_Type *port, int port_num)
     uint32_t status = port->ISFR;
 
     for (int i = 0; i < 32; i++) {
-        if ((status & (1 << i)) && (port->PCR[i] & PORT_PCR_IRQC_MASK)) {
-            port->ISFR = (1 << i);
+        if ((status & (1u << i)) && (port->PCR[i] & PORT_PCR_IRQC_MASK)) {
+            port->ISFR = (1u << i);
             int ctx = get_ctx(port_num, i);
             isr_ctx[ctx].cb(isr_ctx[ctx].arg);
         }
@@ -347,3 +352,12 @@ void isr_portg(void)
     irq_handler(PORTG, 6);
 }
 #endif /* ISR_PORT_G */
+
+#if defined(PORTB_BASE) && defined(PORTC_BASE)
+/* Combined ISR used in certain KL devices */
+void isr_portb_portc(void)
+{
+    irq_handler(PORTB, 1);
+    irq_handler(PORTC, 2);
+}
+#endif

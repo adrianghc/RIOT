@@ -11,7 +11,7 @@
  * @defgroup    net_netopt   Configuration options for network APIs
  * @ingroup     net
  * @brief       List of available configuration options for the
- *              @ref net_gnrc_netdev and the @ref net_gnrc_netapi
+ *              @ref drivers_netdev_api and the @ref net_gnrc_netapi
  * @{
  *
  * @file
@@ -86,7 +86,7 @@ typedef enum {
      * When adding an IPv6 address to a GNRC interface using
      * @ref GNRC_NETAPI_MSG_TYPE_SET, the gnrc_netapi_opt_t::context field can
      * be used to pass the prefix length (8 MSB) and some flags (8 LSB)
-     * according to @ref net_gnrc_netif2_ipv6_addrs_flags. The address is however always
+     * according to @ref net_gnrc_netif_ipv6_addrs_flags. The address is however always
      * considered to be manually added.
      * When getting the option you can pass an array of @ref ipv6_addr_t of any
      * length greater than 0 to the getter. The array will be filled up to to
@@ -103,7 +103,7 @@ typedef enum {
      *
      * The information contained in the array is very specific to the
      * interface's API. For GNRC e.g. the values are according to
-     * @ref net_gnrc_netif2_ipv6_addrs_flags.
+     * @ref net_gnrc_netif_ipv6_addrs_flags.
      */
     NETOPT_IPV6_ADDR_FLAGS,
     /**
@@ -114,7 +114,7 @@ typedef enum {
      * When adding an IPv6 address to a GNRC interface using
      * @ref GNRC_NETAPI_MSG_TYPE_SET, the gnrc_netapi_opt_t::context field can
      * be used to pass the prefix length (8 MSB) and some flags (8 LSB)
-     * according to @ref net_gnrc_netif2_ipv6_addrs_flags. The address is however always
+     * according to @ref net_gnrc_netif_ipv6_addrs_flags. The address is however always
      * considered to be manually added.
      * When getting the option you can pass an array of @ref ipv6_addr_t of any
      * length greater than 0 to the getter. The array will be filled up to to
@@ -147,6 +147,12 @@ typedef enum {
                                  *   the current state */
     NETOPT_AUTOACK,             /**< en/disable link layer auto ACKs or read
                                  *   the current state */
+    NETOPT_ACK_PENDING,         /**< en/disable the frame pending bit of ACKs.
+                                 *   This bit is copied into the frame pending
+                                 *   subfield of the ACK if it is the response
+                                 *   to a data request MAC command frame, which
+                                 *   lets the data request sender know if the ACK
+                                 *   sender has pending data or not. */
     NETOPT_ACK_REQ,             /**< en/disable acknowledgement requests or
                                  *   read the current state */
     NETOPT_RETRANS,             /**< get/set the maximum number of
@@ -271,6 +277,18 @@ typedef enum {
     NETOPT_IS_WIRED,
 
     /**
+     * @brief (@ref netopt_enable_t) Phy link status.
+     *
+     * Returns NETOPT_ENABLE when the the link of the interface is up,
+     * NETOPT_DISABLE when the link is down. If the interface is wireless or
+     * doesn't support link status detection this function will return
+     * -ENOTSUP.
+     *
+     * @note Setting this option will always return -ENOTSUP.
+     */
+    NETOPT_LINK_CONNECTED,
+
+    /**
      * @brief get a device's "type", e.g., ethernet, 802.15.4, ...
      */
     NETOPT_DEVICE_TYPE,
@@ -376,6 +394,17 @@ typedef enum {
     NETOPT_INTEGRITY_CHECK,
 
     /**
+     * @brief   Get/Set the channel center frequency.
+     *
+     * Values are retrieved/passed as uint32_t in host byte order.
+     *
+     * For example, with LoRa, this corresponds to the center frequency of
+     * each channel (867300000, etc) for a given frequency band
+     * (868, 915, etc).
+     */
+    NETOPT_CHANNEL_FREQUENCY,
+
+    /**
      * @brief   Enable/disable channel hopping.
      */
     NETOPT_CHANNEL_HOP,
@@ -405,11 +434,6 @@ typedef enum {
      * Values are retrieved/passed as uint32_t in host byte order.
      */
     NETOPT_TX_TIMEOUT,
-
-    /**
-     * @brief   Get/Set the radio modem type as uint8_t.
-     */
-    NETOPT_DEVICE_MODE,
 
     /**
      * @brief   Get/Set the radio modulation bandwidth as uint8_t.

@@ -194,7 +194,7 @@ static uint16_t tx_upload(w5100_t *dev, uint16_t start, void *data, size_t len)
     }
 }
 
-static int send(netdev_t *netdev, const struct iovec *vector, unsigned count)
+static int send(netdev_t *netdev, const iolist_t *iolist)
 {
     w5100_t *dev = (w5100_t *)netdev;
     int sum = 0;
@@ -210,9 +210,10 @@ static int send(netdev_t *netdev, const struct iovec *vector, unsigned count)
         pos = S0_TX_BASE;
     }
 
-    for (unsigned i = 0; i < count; i++) {
-        pos = tx_upload(dev, pos, vector[i].iov_base, vector[i].iov_len);
-        sum += vector[i].iov_len;
+    for (const iolist_t *iol = iolist; iol; iol = iol->iol_next) {
+        size_t len = iol->iol_len;
+        pos = tx_upload(dev, pos, iol->iol_base, len);
+        sum += len;
     }
 
     waddr(dev, S0_TX_WR0, S0_TX_WR1, pos);
@@ -235,7 +236,7 @@ static int recv(netdev_t *netdev, void *buf, size_t len, void *info)
     (void)info;
     w5100_t *dev = (w5100_t *)netdev;
     uint8_t *in_buf = (uint8_t *)buf;
-    int n = 0;
+    unsigned n = 0;
 
     /* get access to the SPI bus for the duration of this function */
     spi_acquire(dev->p.spi, dev->p.cs, SPI_CONF, dev->p.clk);
@@ -255,7 +256,7 @@ static int recv(netdev_t *netdev, void *buf, size_t len, void *info)
         if (in_buf != NULL) {
             uint16_t pos = rp + 2;
             len = (n <= len) ? n : len;
-            for (int i = 0; i < (int)len; i++) {
+            for (unsigned i = 0; i < len; i++) {
                 in_buf[i] = rreg(dev, (S0_RX_BASE + ((pos++) & S0_MASK)));
             }
 
@@ -276,7 +277,7 @@ static int recv(netdev_t *netdev, void *buf, size_t len, void *info)
     /* release the SPI bus again */
     spi_release(dev->p.spi);
 
-    return n;
+    return (int)n;
 }
 
 static void isr(netdev_t *netdev)

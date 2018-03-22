@@ -1,4 +1,4 @@
-APPLICATION = shell
+DEVELHELP=0
 include ../Makefile.tests_common
 
 USEMODULE += shell

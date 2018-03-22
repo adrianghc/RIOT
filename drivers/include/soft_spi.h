@@ -7,9 +7,10 @@
  */
 
 /**
- * @defgroup    driver_soft_spi Soft SPI
- * @ingroup     drivers
+ * @defgroup    drivers_soft_spi Soft SPI
+ * @ingroup     drivers_soft_periph
  * @brief       Software implemented Serial Peripheral Interface bus
+ *
  * This module provides a software implemented Serial Peripheral Interface bus.
  * It is intended to be used in situation where hardware spi is not available.
  * The signatures of the functions are similar to the functions declared in spi.h

@@ -40,10 +40,6 @@
 #include "net/gnrc/ipv6.h"
 #endif
 
-#ifdef MODULE_GNRC_IPV6_NETIF
-#include "net/gnrc/ipv6/netif.h"
-#endif
-
 #ifdef MODULE_L2_PING
 #include "l2_ping.h"
 #endif
@@ -219,6 +215,11 @@ void auto_init(void)
     auto_init_netdev_tap();
 #endif
 
+#ifdef MODULE_SOCKET_ZEP
+    extern void auto_init_socket_zep(void);
+    auto_init_socket_zep();
+#endif
+
 #ifdef MODULE_NORDIC_SOFTDEVICE_BLE
     extern void gnrc_nordic_ble_6lowpan_init(void);
     gnrc_nordic_ble_6lowpan_init();
@@ -234,11 +235,12 @@ void auto_init(void)
     auto_init_w5100();
 #endif
 
-#endif /* MODULE_AUTO_INIT_GNRC_NETIF */
-
-#ifdef MODULE_GNRC_IPV6_NETIF
-    gnrc_ipv6_netif_init_by_dev();
+#ifdef MODULE_SX127X
+    extern void auto_init_sx127x(void);
+    auto_init_sx127x();
 #endif
+
+#endif /* MODULE_AUTO_INIT_GNRC_NETIF */
 
 #ifdef MODULE_GNRC_UHCPC
     extern void auto_init_gnrc_uhcpc(void);
@@ -277,6 +279,10 @@ void auto_init(void)
     extern void auto_init_lis3dh(void);
     auto_init_lis3dh();
 #endif
+#ifdef MODULE_LIS3MDL
+extern void auto_init_lis3mdl(void);
+auto_init_lis3mdl();
+#endif
 #ifdef MODULE_MAG3110
     extern void auto_init_mag3110(void);
     auto_init_mag3110();
@@ -288,6 +294,10 @@ void auto_init(void)
 #ifdef MODULE_MPL3115A2
     extern void auto_init_mpl3115a2(void);
     auto_init_mpl3115a2();
+#endif
+#ifdef MODULE_MPU9150
+extern void auto_init_mpu9150(void);
+auto_init_mpu9150();
 #endif
 #ifdef MODULE_GROVE_LEDBAR
     extern void auto_init_grove_ledbar(void);
@@ -301,6 +311,10 @@ void auto_init(void)
     extern void auto_init_bmp180(void);
     auto_init_bmp180();
 #endif
+#ifdef MODULE_BMX055
+    extern void auto_init_bmx055(void);
+    auto_init_bmx055();
+#endif
 #if defined(MODULE_BME280) || defined(MODULE_BMP280)
     extern void auto_init_bmx280(void);
     auto_init_bmx280();
@@ -313,9 +327,17 @@ void auto_init(void)
     extern void auto_init_tsl2561(void);
     auto_init_tsl2561();
 #endif
+#ifdef MODULE_PULSE_COUNTER
+    extern void auto_init_pulse_counter(void);
+    auto_init_pulse_counter();
+#endif
 #ifdef MODULE_HDC1000
     extern void auto_init_hdc1000(void);
     auto_init_hdc1000();
+#endif
+#ifdef MODULE_HTS221
+    extern void auto_init_hts221(void);
+    auto_init_hts221();
 #endif
 #ifdef MODULE_DHT
     extern void auto_init_dht(void);
@@ -348,6 +370,14 @@ void auto_init(void)
 #ifdef MODULE_ADCXX1C
     extern void auto_init_adcxx1c(void);
     auto_init_adcxx1c();
+#endif
+#ifdef MODULE_LIS2DH12
+    extern void auto_init_lis2dh12(void);
+    auto_init_lis2dh12();
+#endif
+#ifdef MODULE_SI114X
+    extern void auto_init_si114x(void);
+    auto_init_si114x();
 #endif
 
 #endif /* MODULE_AUTO_INIT_SAUL */

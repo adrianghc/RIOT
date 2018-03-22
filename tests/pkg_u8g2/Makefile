@@ -1,4 +1,3 @@
-APPLICATION = pkg_u8g2
 include ../Makefile.tests_common
 
 BOARD_INSUFFICIENT_MEMORY := nucleo32-f031
@@ -59,3 +58,6 @@ CFLAGS += -DTEST_PIN_RESET=$(TEST_PIN_RESET)
 CFLAGS += -DTEST_DISPLAY=$(TEST_DISPLAY)
 
 include $(RIOTBASE)/Makefile.include
+
+test:
+	tests/01-run.py

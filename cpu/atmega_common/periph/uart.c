@@ -97,7 +97,7 @@ static void _set_brr(uart_t uart, uint32_t baudrate)
 {
     uint16_t brr;
 #if defined(UART_STDIO_BAUDRATE)
-    // UBRR_VALUE and USE_2X are statically computed from <util/setbaud.h>
+    /* UBRR_VALUE and USE_2X are statically computed from <util/setbaud.h> */
     if (baudrate == UART_STDIO_BAUDRATE) {
         _update_brr(uart, UBRR_VALUE, USE_2X);
         return;
@@ -150,6 +150,18 @@ void uart_write(uart_t uart, const uint8_t *data, size_t len)
         while (!(dev[uart]->CSRA & (1 << UDRE0))) {};
         dev[uart]->DR = data[i];
     }
+}
+
+void uart_poweron(uart_t uart)
+{
+    (void)uart;
+    /* not implemented (yet) */
+}
+
+void uart_poweroff(uart_t uart)
+{
+    (void)uart;
+    /* not implemented (yet) */
 }
 
 static inline void isr_handler(int num)

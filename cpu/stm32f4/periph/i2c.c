@@ -32,6 +32,7 @@
 #include "mutex.h"
 #include "periph_conf.h"
 #include "periph/i2c.h"
+#include "pm_layered.h"
 
 #define ENABLE_DEBUG    (0)
 #include "debug.h"
@@ -227,6 +228,8 @@ int i2c_acquire(i2c_t dev)
         return -1;
     }
     mutex_lock(&locks[dev]);
+    /* block STOP mode */
+    pm_block(STM32_PM_STOP);
     return 0;
 }
 
@@ -235,6 +238,8 @@ int i2c_release(i2c_t dev)
     if (dev >= I2C_NUMOF) {
         return -1;
     }
+    /* unblock STOP mode */
+    pm_unblock(STM32_PM_STOP);
     mutex_unlock(&locks[dev]);
     return 0;
 }
@@ -283,7 +288,7 @@ int i2c_read_bytes(i2c_t dev, uint8_t address, void *data, int length)
         }
 
         /* read byte */
-        *in++ = i2c->DR;
+        *(in++) = i2c->DR;
     }
 
     /* set STOP */

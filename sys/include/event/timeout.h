@@ -54,25 +54,38 @@ typedef struct {
 /**
  * @brief   Initialize timeout event object
  *
- * @param[in]   event_timeout   event_timeout object to initilalize
+ * @param[in]   event_timeout   event_timeout object to initialize
  * @param[in]   queue           queue that the timed-out event will be added to
  * @param[in]   event           event to add to queue after timeout
  */
-void event_timeout_init(event_timeout_t *event_timeout, event_queue_t *queue, event_t *event);
+void event_timeout_init(event_timeout_t *event_timeout, event_queue_t *queue,
+                        event_t *event);
 
 /**
  * @brief   Set a timeout
  *
  * This will make the event as configured in @p event_timeout be triggered
- * after @p timeout miliseconds.
+ * after @p timeout microseconds.
  *
  * @note: the used event_timeout struct must stay valid until after the timeout
  *        event has been processed!
  *
- * @param[in]   event_timeout   event_timout context onject to use
- * @param[in]   timeout         timeout in miliseconds
+ * @param[in]   event_timeout   event_timout context object to use
+ * @param[in]   timeout         timeout in microseconds
  */
 void event_timeout_set(event_timeout_t *event_timeout, uint32_t timeout);
+
+/**
+ * @brief   Clear a timeout event
+ *
+ * Calling this function will cancel the timeout by removing its underlying
+ * timer. If the timer has already fired before calling this function, the
+ * connected event will be put already into the given event queue and this
+ * function does not have any effect.
+ *
+ * @param[in]   event_timeout   event_timeout context object to use
+ */
+void event_timeout_clear(event_timeout_t *event_timeout);
 
 #ifdef __cplusplus
 }

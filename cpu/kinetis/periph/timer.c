@@ -32,6 +32,16 @@
 #include "periph_conf.h"
 #include "periph/timer.h"
 
+#ifdef PIT_LTMR64H_LTH_MASK
+/* The KW41Z PIT module provides only one IRQ for all PIT channels combined. */
+/* TODO: find a better way to distinguish which Kinetis CPUs have separate PIT
+ * channel interrupts */
+#define KINETIS_PIT_COMBINED_IRQ 1
+#else
+/* K60, K64F etc have a separate IRQ number for each PIT channel */
+#define KINETIS_PIT_COMBINED_IRQ 0
+#endif
+
 #define ENABLE_DEBUG (0)
 #include "debug.h"
 
@@ -132,16 +142,16 @@ static inline tim_t _lptmr_tim_t(uint8_t dev) {
 /* ****** PIT module functions ****** */
 
 /* Forward declarations */
-inline static int pit_init(uint8_t dev, uint32_t freq, timer_cb_t cb, void *arg);
-inline static int pit_set(uint8_t dev, uint32_t timeout);
-inline static int pit_set_absolute(uint8_t dev, uint32_t target);
-inline static int pit_clear(uint8_t dev);
-inline static uint32_t pit_read(uint8_t dev);
-inline static void pit_start(uint8_t dev);
-inline static void pit_stop(uint8_t dev);
-inline static void pit_irq_handler(tim_t dev);
+static inline int pit_init(uint8_t dev, uint32_t freq, timer_cb_t cb, void *arg);
+static inline int pit_set(uint8_t dev, uint32_t timeout);
+static inline int pit_set_absolute(uint8_t dev, uint32_t target);
+static inline int pit_clear(uint8_t dev);
+static inline uint32_t pit_read(uint8_t dev);
+static inline void pit_start(uint8_t dev);
+static inline void pit_stop(uint8_t dev);
+static inline void pit_irq_handler(tim_t dev);
 
-inline static void _pit_set_cb_config(uint8_t dev, timer_cb_t cb, void *arg)
+static inline void _pit_set_cb_config(uint8_t dev, timer_cb_t cb, void *arg)
 {
     /* set callback function */
     pit[dev].isr_ctx.cb = cb;
@@ -149,7 +159,7 @@ inline static void _pit_set_cb_config(uint8_t dev, timer_cb_t cb, void *arg)
 }
 
 /** use channel n-1 as prescaler */
-inline static void _pit_set_prescaler(uint8_t ch, uint32_t freq)
+static inline void _pit_set_prescaler(uint8_t ch, uint32_t freq)
 {
     /* Disable channel completely */
     PIT->CHANNEL[ch].TCTRL = 0x0;
@@ -158,7 +168,7 @@ inline static void _pit_set_prescaler(uint8_t ch, uint32_t freq)
     PIT->CHANNEL[ch].TCTRL = (PIT_TCTRL_TEN_MASK);
 }
 
-inline static void _pit_set_counter(uint8_t dev)
+static inline void _pit_set_counter(uint8_t dev)
 {
     const uint8_t ch = pit_config[dev].count_ch;
     /* Disable channel completely */
@@ -169,7 +179,7 @@ inline static void _pit_set_counter(uint8_t dev)
     PIT->CHANNEL[ch].TCTRL = pit[dev].tctrl;
 }
 
-inline static int pit_init(uint8_t dev, uint32_t freq, timer_cb_t cb, void *arg)
+static inline int pit_init(uint8_t dev, uint32_t freq, timer_cb_t cb, void *arg)
 {
     /* Turn on module clock gate */
     PIT_CLKEN();
@@ -189,10 +199,15 @@ inline static int pit_init(uint8_t dev, uint32_t freq, timer_cb_t cb, void *arg)
 
     /* Clear IRQ flag */
     PIT->CHANNEL[pit_config[dev].count_ch].TFLG = PIT_TFLG_TIF_MASK;
+#if KINETIS_PIT_COMBINED_IRQ
+    /* One IRQ for all channels */
+    /* NVIC_ClearPendingIRQ(PIT_IRQn); */ /* does it make sense to clear this IRQ flag? */
+    NVIC_EnableIRQ(PIT_IRQn);
+#else
     /* Refactor the below lines if there are any CPUs where the PIT IRQs are not sequential */
     NVIC_ClearPendingIRQ(PIT0_IRQn + pit_config[dev].count_ch);
     NVIC_EnableIRQ(PIT0_IRQn + pit_config[dev].count_ch);
-
+#endif
     /* Reset up-counter */
     pit[dev].count = PIT_MAX_VALUE;
     pit[dev].ldval = PIT_MAX_VALUE;
@@ -204,7 +219,7 @@ inline static int pit_init(uint8_t dev, uint32_t freq, timer_cb_t cb, void *arg)
     return 0;
 }
 
-inline static int pit_set(uint8_t dev, uint32_t timeout)
+static inline int pit_set(uint8_t dev, uint32_t timeout)
 {
     const uint8_t ch = pit_config[dev].count_ch;
     /* Disable IRQs to minimize the number of lost ticks */
@@ -224,7 +239,7 @@ inline static int pit_set(uint8_t dev, uint32_t timeout)
     return 0;
 }
 
-inline static int pit_set_absolute(uint8_t dev, uint32_t target)
+static inline int pit_set_absolute(uint8_t dev, uint32_t target)
 {
     uint8_t ch = pit_config[dev].count_ch;
     /* Disable IRQs to minimize the number of lost ticks */
@@ -243,7 +258,7 @@ inline static int pit_set_absolute(uint8_t dev, uint32_t target)
     return 0;
 }
 
-inline static int pit_clear(uint8_t dev)
+static inline int pit_clear(uint8_t dev)
 {
     uint8_t ch = pit_config[dev].count_ch;
     /* Disable IRQs to minimize the number of lost ticks */
@@ -266,7 +281,7 @@ inline static int pit_clear(uint8_t dev)
     return 0;
 }
 
-inline static uint32_t pit_read(uint8_t dev)
+static inline uint32_t pit_read(uint8_t dev)
 {
     uint8_t ch = pit_config[dev].count_ch;
     if ((PIT->CHANNEL[ch].TCTRL & PIT_TCTRL_TEN_MASK) != 0) {
@@ -279,7 +294,7 @@ inline static uint32_t pit_read(uint8_t dev)
     }
 }
 
-inline static void pit_start(uint8_t dev)
+static inline void pit_start(uint8_t dev)
 {
     uint8_t ch = pit_config[dev].count_ch;
     if ((PIT->CHANNEL[ch].TCTRL & PIT_TCTRL_TEN_MASK) != 0) {
@@ -291,7 +306,7 @@ inline static void pit_start(uint8_t dev)
     PIT->CHANNEL[ch].TCTRL = pit[dev].tctrl;
 }
 
-inline static void pit_stop(uint8_t dev)
+static inline void pit_stop(uint8_t dev)
 {
     uint8_t ch = pit_config[dev].count_ch;
     if ((PIT->CHANNEL[ch].TCTRL & PIT_TCTRL_TEN_MASK) == 0) {
@@ -305,7 +320,7 @@ inline static void pit_stop(uint8_t dev)
     pit[dev].ldval = cval;
 }
 
-inline static void pit_irq_handler(tim_t dev)
+static inline void pit_irq_handler(tim_t dev)
 {
     uint8_t ch = pit_config[_pit_index(dev)].count_ch;
     pit_t *pit_ctx = &pit[_pit_index(dev)];
@@ -326,19 +341,19 @@ inline static void pit_irq_handler(tim_t dev)
 /* ****** LPTMR module functions ****** */
 
 /* Forward declarations */
-inline static int lptmr_init(uint8_t dev, uint32_t freq, timer_cb_t cb, void *arg);
-inline static int lptmr_set(uint8_t dev, uint16_t timeout);
-inline static int lptmr_set_absolute(uint8_t dev, uint16_t target);
-inline static int lptmr_clear(uint8_t dev);
-inline static uint16_t lptmr_read(uint8_t dev);
-inline static void lptmr_start(uint8_t dev);
-inline static void lptmr_stop(uint8_t dev);
-inline static void lptmr_irq_handler(tim_t tim);
+static inline int lptmr_init(uint8_t dev, uint32_t freq, timer_cb_t cb, void *arg);
+static inline int lptmr_set(uint8_t dev, uint16_t timeout);
+static inline int lptmr_set_absolute(uint8_t dev, uint16_t target);
+static inline int lptmr_clear(uint8_t dev);
+static inline uint16_t lptmr_read(uint8_t dev);
+static inline void lptmr_start(uint8_t dev);
+static inline void lptmr_stop(uint8_t dev);
+static inline void lptmr_irq_handler(tim_t tim);
 
 /**
  * @brief Read the prescaler register from the RTC as a reliable 47 bit time counter
  */
-inline static uint32_t _rtt_get_subtick(void)
+static inline uint32_t _rtt_get_subtick(void)
 {
     uint32_t tpr;
     uint32_t tsr;
@@ -364,7 +379,7 @@ inline static uint32_t _rtt_get_subtick(void)
     return (tsr << TIMER_RTC_SUBTICK_BITS) | tpr;
 }
 
-inline static void _lptmr_set_cb_config(uint8_t dev, timer_cb_t cb, void *arg)
+static inline void _lptmr_set_cb_config(uint8_t dev, timer_cb_t cb, void *arg)
 {
     /* set callback function */
     lptmr[dev].isr_ctx.cb = cb;
@@ -374,7 +389,7 @@ inline static void _lptmr_set_cb_config(uint8_t dev, timer_cb_t cb, void *arg)
 /**
  * @brief  Compute the LPTMR prescaler setting, see reference manual for details
  */
-inline static int32_t _lptmr_compute_prescaler(uint32_t freq) {
+static inline int32_t _lptmr_compute_prescaler(uint32_t freq) {
     uint32_t prescale = 0;
     if ((freq > LPTMR_BASE_FREQ) || (freq == 0)) {
         /* Frequency out of range */
@@ -402,7 +417,7 @@ inline static int32_t _lptmr_compute_prescaler(uint32_t freq) {
 /**
  * @brief  Update the offset between RTT and LPTMR
  */
-inline static void _lptmr_update_rtt_offset(uint8_t dev)
+static inline void _lptmr_update_rtt_offset(uint8_t dev)
 {
     lptmr[dev].rtt_offset = _rtt_get_subtick();
 }
@@ -410,12 +425,12 @@ inline static void _lptmr_update_rtt_offset(uint8_t dev)
 /**
  * @brief  Update the reference time point (CNR=0)
  */
-inline static void _lptmr_update_reference(uint8_t dev)
+static inline void _lptmr_update_reference(uint8_t dev)
 {
     lptmr[dev].reference = _rtt_get_subtick() + LPTMR_RELOAD_OVERHEAD - lptmr[dev].rtt_offset;
 }
 
-inline static void _lptmr_set_counter(uint8_t dev)
+static inline void _lptmr_set_counter(uint8_t dev)
 {
     _lptmr_update_reference(dev);
     LPTMR_Type *hw = lptmr_config[dev].dev;
@@ -425,7 +440,7 @@ inline static void _lptmr_set_counter(uint8_t dev)
     hw->CSR = lptmr[dev].csr;
 }
 
-inline static int lptmr_init(uint8_t dev, uint32_t freq, timer_cb_t cb, void *arg)
+static inline int lptmr_init(uint8_t dev, uint32_t freq, timer_cb_t cb, void *arg)
 {
     int32_t prescale = _lptmr_compute_prescaler(freq);
     if (prescale < 0) {
@@ -460,7 +475,7 @@ inline static int lptmr_init(uint8_t dev, uint32_t freq, timer_cb_t cb, void *ar
     return 0;
 }
 
-inline static uint16_t lptmr_read(uint8_t dev)
+static inline uint16_t lptmr_read(uint8_t dev)
 {
     LPTMR_Type *hw = lptmr_config[dev].dev;
     /* latch the current timer value into CNR */
@@ -468,7 +483,7 @@ inline static uint16_t lptmr_read(uint8_t dev)
     return lptmr[dev].reference + hw->CNR;
 }
 
-inline static int lptmr_set(uint8_t dev, uint16_t timeout)
+static inline int lptmr_set(uint8_t dev, uint16_t timeout)
 {
     /* Disable IRQs to minimize jitter */
     unsigned int mask = irq_disable();
@@ -484,7 +499,7 @@ inline static int lptmr_set(uint8_t dev, uint16_t timeout)
     return 0;
 }
 
-inline static int lptmr_set_absolute(uint8_t dev, uint16_t target)
+static inline int lptmr_set_absolute(uint8_t dev, uint16_t target)
 {
     /* Disable IRQs to minimize jitter */
     unsigned int mask = irq_disable();
@@ -501,7 +516,7 @@ inline static int lptmr_set_absolute(uint8_t dev, uint16_t target)
     return 0;
 }
 
-inline static int lptmr_clear(uint8_t dev)
+static inline int lptmr_clear(uint8_t dev)
 {
     /* Disable IRQs to minimize jitter */
     unsigned int mask = irq_disable();
@@ -517,7 +532,7 @@ inline static int lptmr_clear(uint8_t dev)
     return 0;
 }
 
-inline static void lptmr_start(uint8_t dev)
+static inline void lptmr_start(uint8_t dev)
 {
     if (lptmr[dev].running != 0) {
         /* Timer already running */
@@ -527,7 +542,7 @@ inline static void lptmr_start(uint8_t dev)
     _lptmr_set_counter(dev);
 }
 
-inline static void lptmr_stop(uint8_t dev)
+static inline void lptmr_stop(uint8_t dev)
 {
     if (lptmr[dev].running == 0) {
         /* Timer already stopped */
@@ -550,7 +565,7 @@ inline static void lptmr_stop(uint8_t dev)
     irq_restore(mask);
 }
 
-inline static void lptmr_irq_handler(tim_t tim)
+static inline void lptmr_irq_handler(tim_t tim)
 {
     uint8_t dev = _lptmr_index(tim);
     LPTMR_Type *hw = lptmr_config[dev].dev;
@@ -710,6 +725,22 @@ void timer_stop(tim_t dev)
 }
 
 /* ****** ISR instances ****** */
+
+void isr_pit(void)
+{
+    /* Some of the lower end Kinetis CPUs combine the individual PIT interrupt
+     * flags into a single NVIC IRQ signal. This means that software needs to
+     * test which timer(s) went off when an IRQ occurs. */
+    for (size_t i = 0; i < PIT_NUMOF; ++i) {
+        if (PIT->CHANNEL[pit_config[i].count_ch].TCTRL & PIT_TCTRL_TIE_MASK) {
+            /* Interrupt is enabled */
+            if (PIT->CHANNEL[pit_config[i].count_ch].TFLG) {
+                /* Timer interrupt flag is set */
+                pit_irq_handler(_pit_tim_t(i));
+            }
+        }
+    }
+}
 
 #ifdef PIT_ISR_0
 void PIT_ISR_0(void)
